@@ -1,11 +1,18 @@
+require('dotenv').config()
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+const db = require('./models');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+
+
+db.sequelize.sync({ force: false });
+// db.sequelize.sync({ force: true });
+
 
 var app = express();
 
