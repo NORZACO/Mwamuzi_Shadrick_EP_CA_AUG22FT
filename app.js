@@ -4,14 +4,26 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var jsend = require('jsend');
+
 
 const db = require('./models');
 var indexRouter = require('./routes/index');
+// usersRouter
 var usersRouter = require('./routes/users');
+// authRouter
+const authRouter = require('./routes/auth');
+// rolesRouter
+const rolesRouter = require('./routes/role');
 
 
 db.sequelize.sync({ force: false });
-// db.sequelize.sync({ force: true });
+console.log("All models were synchronized successfully.");
+
+// db.sequelize.sync({ force: true }).then(() => {
+//   console.log("Drop and re-sync db.");
+// });
+
 
 
 var app = express();
@@ -25,9 +37,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(jsend.middleware);
+
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/auth', authRouter);
+app.use('/roles', rolesRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -43,6 +59,10 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+
+
+  // try get error in jsend
+  // res.status(err.status || 500).jsend.fail({'result' : err.message});
 });
 
 module.exports = app;

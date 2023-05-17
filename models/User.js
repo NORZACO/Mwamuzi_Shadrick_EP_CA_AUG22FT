@@ -17,7 +17,7 @@
 
 module.exports = (sequelize, Sequelize) => {
   const User = sequelize.define('User', {
-    usrname: {
+    username: {
       type: Sequelize.DataTypes.STRING,
 
       allowNull: false,
@@ -46,10 +46,18 @@ module.exports = (sequelize, Sequelize) => {
     }
   );
 
-      User.associate = models => {
-        User.belongsToMany(models.Role, { through: 'UserRoles' });
-        User.hasOne(models.Cart);
-        User.hasMany(models.Order);
-      };
+
+  User.associate = models => {
+    // belongsToMany
+    // User.hasOne(models.Role) //, { through: 'UserRoles' },{ timestamps: false, });
+    User.belongsToMany(models.Role, { through: 'UserRoles' },{ timestamps: false },);
+
+    // hasOne
+    User.hasOne(models.Cart);
+    // hasMany
+    User.hasMany(models.Order);
+    // onDelete: 'CASCADE'
+    // User.hasMany(models.Review, { onDelete: 'CASCADE' });
+  };
   return User;
 };

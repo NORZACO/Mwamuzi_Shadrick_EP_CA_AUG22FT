@@ -5,8 +5,8 @@ module.exports = (sequelize, Sequelize) => {
     { timestamps: false });
   
     Role.associate = models => {
-      Role.belongsToMany(models.User, { through: 'UserRoles' },
-      { timestamps: false });
+      Role.belongsToMany(models.User, { through: 'UserRoles' },{ timestamps: false },);
+      // Role.hasOne(models.User)
     };
   
     return Role;
