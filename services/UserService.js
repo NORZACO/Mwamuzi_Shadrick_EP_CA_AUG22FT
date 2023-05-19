@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, sequelize } = require("sequelize");
 
 
 class UserService {
@@ -14,79 +14,105 @@ class UserService {
         this.OrderItem = db.OrderItem;
     }
 
-    async createUser(Username, Email, Salt, EncryptedPassword) {
+    // INSERT INTO `stocksalesdb`.`users` (`id`, `username`, `email`, `encryptedPassword`, `salt`, `roleId`) VALUES (NULL, NULL, NULL, NULL, NULL, NULL);
+    async createUser(Username, Email, Salt, EncryptedPassword, RoleId) {
         return this.User.create(
             {
                 username: Username,
                 email: Email,
                 salt: Salt,
-                encryptedPassword: EncryptedPassword
+                encryptedPassword: EncryptedPassword,
+                roleId: RoleId
             }
         )
     }
 
+    // CHECK IF EMAIL EXIST
+    async getUserByEmail(Email) {
+        return this.User.findAll(
+            {
+                where: {
+                    email: Email
+                }
+            }
 
-// https://stackoverflow.com/questions/68115880/get-specific-attributes-from-database-using-sequelize-model-query
+        )
+    }
+
+
+
+
+    // CHECK IF and CHECK ROLE ID EXIST
+    // async getUserRoleId(roleId) {
+    //     return this.User.findAll({
+    //         where: {
+    //             roleId: roleId
+    //         }
+    //     })
+    // }
+
+
+
+    // https://stackoverflow.com/questions/68115880/get-specific-attributes-from-database-using-sequelize-model-query
     async getAllUsers() {
         return this.User.findAll({
             attributes: ['id', 'username', 'email'],
             include: {
                 model: this.Role,
-                through: {
-                    attributes: [`RoleId`, `UserId`]
-                },
-
+                // attributes: ['id', 'name']
+                // through: {
+                //     attributes: [`RoleId`]
+                // },
             }
         })
     }
 
-    async getOne(userId) {
+
+
+    async getUserById(userId) {
         return await this.User.findOne({
             where: { id: userId },
-            include: {
-                model: this.CartItem,
-                through: {
-                    attributes: ['quantity']
-                },
-                include: {
-                    model: this.Hotel
-                }
-            }
-        });
-    }
-    async getOneByName(username) {
-        return await this.User.findOne({
-            where: { username: username },
-            include: {
-                model: this.CartItem,
-                through: {
-                    attributes: ['quantity']
-                },
-                include: {
-                    model: this.CartItem
-                }
-            }
+            // attributes
+            attributes: [['id', 'userid'], 'username', 'email']
         });
     }
 
-    async deleteUser(userId) {
-        return this.User.destroy({
-            where: { id: userId }
-        })
-    }
+
+
+
+    // async getUserByName(username) {
+    //     return await this.User.findOne({
+    //         where: { username: username },
+    //         include: {
+    //             model: this.CartItem,
+    //             through: {
+    //                 attributes: ['quantity']
+    //             },
+    //             include: {
+    //                 model: this.CartItem
+    //             }
+    //         }
+    //     });
+    // }
+
+    // async deleteUser(userId) {
+    //     return this.User.destroy({
+    //         where: { id: userId }
+    //     })
+    // }
 
 
     // update user updateUser
-    async updateUser(userId, username, email, salt, encryptedPassword) {
+    async updateUser(UserId, Username, Email, Salt, EncryptedPassword) {
         return this.User.update(
             {
-                Username: username,
-                Email: email,
-                Salt: salt,
-                EncryptedPassword: encryptedPassword
+                esername: Username,
+                email: Email,
+                salt: Salt,
+                encryptedPassword: EncryptedPassword
             },
             {
-                where: { id: userId }
+                where: { id: UserId }
             }
         )
     }
@@ -104,37 +130,32 @@ class UserService {
 
 
     // remove removeRole
-    async removeRole(userId, roleId) {
-        return this.UserRole.destroy(
-            {
-                where: {
-                    UserId: userId,
-                    RoleId: roleId
-                }
-            }
-        )
-    }
+    // async removeRole(userId, roleId) {
+    //     return this.UserRole.destroy(
+    //         {
+    //             where: {
+    //                 UserId: userId,
+    //                 RoleId: roleId
+    //             }
+    //         }
+    //     )
+    // }
 
 
-    // getRoles
-    async getRoles(userId) {
-        return this.UserRole.findAll(
-            {
-                where: {
-                    UserId: userId
-                }
-            }
-        )
-    }
 
     // get user by email getUserByEmail
-    async getUserByEmail(email) {
-        return this.User.findOne(
+    async getUserByEmail(Email) {
+        return this.User.findAll(
             {
                 where: {
-                    email: email
+                    email: Email
+                },
+                include: {
+                    model: this.Role,
+
                 }
             }
+
         )
     }
 
@@ -146,3 +167,8 @@ class UserService {
 
 //TODO: Creat user service
 module.exports = UserService;
+
+
+
+
+

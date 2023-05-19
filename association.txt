@@ -1,0 +1,14 @@
+
+
+Defining the Sequelize associations
+The four association types are defined in a very similar way. Let's say we have two models, A and B. Telling Sequelize that you want an association between the two needs just a function call:
+
+
+
+const A = sequelize.define('A', /* ... */);
+const B = sequelize.define('B', /* ... */);
+
+A.hasOne(B); // A HasOne B
+A.belongsTo(B); // A BelongsTo B
+A.hasMany(B); // A HasMany B
+A.belongsToMany(B, { through: 'C' }); // A BelongsToMany B through the junction table C

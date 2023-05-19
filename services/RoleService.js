@@ -16,64 +16,16 @@ class RolesService {
 
 
 
-        // create role by name
-        // INSERT INTO `stocksalesdb`.`roles` (`id`, `name`) VALUES (NULL, NULL);
-        async createRole(roleName) {
-            return this.Role.create(
-                {
-                    name: roleName
-                }
-            )
-        }
-    
-
-    // add addRole
-    // INSERT INTO `stocksalesdb`.`userroles` (`createdAt`, `updatedAt`, `RoleId`, `UserId`) VALUES (NULL, NULL, NULL, NULL);
-    async addRole(userId, roleId) {
-        return this.UserRole.create(
+    // create role by name
+    async createRole(roleName) {
+        return this.Role.create(
             {
-                UserId: userId,
-                RoleId: roleId
+                name: roleName
             }
         )
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-    // remove removeRole
-    async removeRole(userId, roleId) {
-        return this.UserRole.destroy(
-            {
-                where: {
-                    UserId: userId,
-                    RoleId: roleId
-                }
-            }
-        )
-    }
-
-
-    // getRoles
-    async getRoles(userId) {
-        return this.UserRole.findAll(
-            {
-                where: {
-                    UserId: userId
-                }
-            }
-        )
-    }
 
     // delete Role
     async deleteRole(roleId) {
@@ -86,13 +38,13 @@ class RolesService {
         )
     }
 
-    // get all roles
+    //GET ALL ROLES
     async getAllRoles() {
         return this.Role.findAll();
     }
 
 
-    
+
     // get role by id
     async getRoleById(roleId) {
         return this.Role.findOne(
@@ -103,6 +55,8 @@ class RolesService {
             }
         )
     }
+
+
 
 
     // get role by name
@@ -116,18 +70,18 @@ class RolesService {
         )
     }
 
-    
+
 
     // getUserById
-    async getUserById(userId) {
-        return this.User.findOne(
-            {
-                where: {
-                    id: userId
-                }
-            }
-        )
-    }
+    // async getUserById(userId) {
+    //     return this.User.findOne(
+    //         {
+    //             where: {
+    //                 id: userId
+    //             }
+    //         }
+    //     )
+    // }
 
 }
 

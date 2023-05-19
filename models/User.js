@@ -40,6 +40,12 @@ module.exports = (sequelize, Sequelize) => {
 
       allowNull: false,
     },
+
+    roleId: {
+      type: Sequelize.DataTypes.INTEGER,
+      allowNull: false,
+    },
+
   },
     {
       timestamps: false,
@@ -47,17 +53,19 @@ module.exports = (sequelize, Sequelize) => {
   );
 
 
-  User.associate = models => {
-    // belongsToMany
-    // User.hasOne(models.Role) //, { through: 'UserRoles' },{ timestamps: false, });
-    User.belongsToMany(models.Role, { through: 'UserRoles' },{ timestamps: false },);
+  // User.associate = models => {
+  //   User.hasOne(models.Cart);
+  //   User.hasMany(models.Order);
+  //   User.belongsTo(models.Role, { targetKey: 'roleId', timestamps: false });
+  // };
 
-    // hasOne
+
+  User.associate = models => {
     User.hasOne(models.Cart);
-    // hasMany
     User.hasMany(models.Order);
-    // onDelete: 'CASCADE'
-    // User.hasMany(models.Review, { onDelete: 'CASCADE' });
+    User.belongsTo(models.Role, { foreignKey: 'roleId' });
   };
+
+
   return User;
 };
