@@ -15,6 +15,8 @@ var usersRouter = require('./routes/users');
 const authRouter = require('./routes/auth');
 // rolesRouter
 const rolesRouter = require('./routes/role');
+// categoryRouter
+const categoryRouter = require('./routes/categoties');
 
 
 db.sequelize.sync({ force: false });
@@ -46,6 +48,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/roles', rolesRouter);
+app.use('/categories', categoryRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
