@@ -10,22 +10,28 @@ var jsend = require('jsend');
 const db = require('./models');
 var indexRouter = require('./routes/index');
 // usersRouter
-var usersRouter = require('./routes/users');
+const usersRouter = require('./routes/users');
 // authRouter
 const authRouter = require('./routes/auth');
 // rolesRouter
 const rolesRouter = require('./routes/role');
 // categoryRouter
 const categoryRouter = require('./routes/categoties');
-
+// itemsRouter
+const itemsRouter = require('./routes/items');
+// ordersRouter
+const { updateStock, createCategoryIfNotFind, updateItem } = require('./Utility/index');
 
 db.sequelize.sync({ force: false });
 console.log("All models were synchronized successfully.");
 
- /* 
+ /*
 db.sequelize.sync({ force: true }).then(() => {
   console.log("Drop and re-sync db.");
-});
+}).then(() => {
+  createCategoryIfNotFind();
+  updateStock();
+})
  */
 
 
@@ -49,6 +55,7 @@ app.use('/users', usersRouter);
 app.use('/auth', authRouter);
 app.use('/roles', rolesRouter);
 app.use('/categories', categoryRouter);
+app.use('/items', itemsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

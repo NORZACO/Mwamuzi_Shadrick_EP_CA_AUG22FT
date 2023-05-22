@@ -1,7 +1,7 @@
 module.exports = (sequelize, Sequelize) => {
     const Item = sequelize.define('Item', {
-        name: Sequelize.STRING,
-        price: Sequelize.FLOAT,
+        item_name : Sequelize.STRING,
+        price: Sequelize.INTEGER,
         sku: Sequelize.STRING,
         stock_quantity: Sequelize.INTEGER,
         img_url: Sequelize.STRING

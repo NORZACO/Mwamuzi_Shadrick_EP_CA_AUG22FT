@@ -21,7 +21,7 @@ class CatergotyServices {
             attributes: ['id', 'name'],
             include: {
                 model: this.Item,
-                attributes: ['id', 'name', 'price', 'categoryId']
+                // attributes: ['id', 'item_name', 'price', 'categoryId']
             }
         })
     }
