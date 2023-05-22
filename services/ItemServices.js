@@ -63,32 +63,41 @@ class ItemServices {
     async findOrCreateCategory(categoryName) {
         // Try to find or create the category
         const [categoryInstance, created] = await Category.findOrCreate({
-          where: { name: categoryName },
-          defaults: { name: categoryName }
+            where: { name: categoryName },
+            defaults: { name: categoryName }
         });
         return categoryInstance;
-      }
-    
-      async createItem(data, categoryId) {
-        // Create the item with the provided category ID
-        const { id, img_url, item_name, price, sku, stock_quantity } = data;
-        const item = await Item.create({
-          name: item_name,
-          price: price,
-          sku: sku,
-          stock_quantity: stock_quantity,
-          img_url: img_url,
-          CategoryId: categoryId
+    }
+
+    async createItem(categName, itemImage, itemName, itemPrice, ItemSku, ItemStockQuantity) {
+        // Try to find or create the category
+        const item = await Item.findOrCreate({
+            where: { name: itemName },
+            defaults: {
+                item_name: itemName,
+                img_url: itemImage,
+                price: itemPrice,
+                sku: ItemSku,
+                stock_quantity: ItemStockQuantity,
+                categoryId: categName.id
+            }
         });
-    
         return item;
-      }
-    
-      async createItemWithCategory(data) {
+    }
+
+    async addItemToCategory(item, category) {
+        item.categoryId = category.id;
+        await item.save();
+        return item;
+    }
+
+
+
+    async createItemWithCategory(data) {
         const category = await this.findOrCreateCategory(data.category);
         const item = await this.createItem(data, category.id);
         return item;
-      }
+    }
 
 
 
