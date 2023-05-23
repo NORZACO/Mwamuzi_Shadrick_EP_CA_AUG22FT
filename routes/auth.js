@@ -13,7 +13,7 @@ const { stringify } = require('node:querystring');
 
 
 // Handle POST requests to /register
-router.post("/register", async (req, res, next) => {
+router.post("/signup", async (req, res, next) => {
    const { username, email, roleId, password } = req.body;
 
    // Check for missing fields
@@ -41,9 +41,9 @@ router.post("/register", async (req, res, next) => {
 
    // Check if email is already used
    const userWithEmail = await userService.getUserByEmail(email);
-   if (userWithEmail) {
+   if (!userWithEmail) {
       // Return a Jsend fail response with an error message
-      return res.status(400).jsend.fail({ 'result': 'Email is already used' });
+      return res.status(400).jsend.fail({ 'result': 'Email is already usedxx' });
    }
 
    // Check if roleId is in database
@@ -63,7 +63,7 @@ router.post("/register", async (req, res, next) => {
 
    var salt = crypto.randomBytes(16);
    // Hash the password with PBKDF2 and the random salt
-   crypto.pbkdf2(password, salt, 310000, 32, 'sha256', function (err, hashedPassword) {
+   Buffer.alloc(password, salt, 310000, 32, 'sha256', function (err, hashedPassword) {
       if (err) {
          // Pass the error to the error handling middleware function
          return next(err);
@@ -85,7 +85,7 @@ router.post("/register", async (req, res, next) => {
 
 
 
-
+/*
 
 // Handle POST requests to /login
 router.post("/login", jsonParser, async (req, res, next) => {
@@ -125,14 +125,16 @@ router.post("/login", jsonParser, async (req, res, next) => {
          // If the user does not exist, return a Jsend fail response
          return res.status(400).jsend.fail({ "result": "Incorrect email or password" });
       }
+   })
 
 
-      // Retrieve the user with the given email from the database
-      userService.getUserByEmail(email).then((data) => {
-         if (data === null) {
-            // If the user does not exist, return a Jsend fail response
-            return res.status(400).jsend.fail({ "result": "Incorrect email or password" });
-         }
+
+   // Retrieve the user with the given email from the database
+   userService.getUserByEmail(email).then((data) => {
+      if (data) {
+         // If the user does not exist, return a Jsend fail response
+         //    return res.status(400).jsend.fail({ "result": "Incorrect email or password" });
+         // }
 
          // Hash the provided password with the stored salt
          crypto.pbkdf2(password, stringify(data.salt), 310000, 32, 'sha256', function (err, hashedPassword) {
@@ -140,7 +142,7 @@ router.post("/login", jsonParser, async (req, res, next) => {
                return cb(err);
             }
             // Compare the hashed password with the stored hashed password
-            if (!crypto.Certificate(data.encryptedPassword, hashedPassword)) {
+            if (!crypto.timingSafeEqual(data.encryptedPassword, hashedPassword)) {
                // If the passwords do not match, return a Jsend fail response
                return res.status(400).jsend.fail({ "result": "Incorrect email or password" });
             }
@@ -165,10 +167,52 @@ router.post("/login", jsonParser, async (req, res, next) => {
                "token": token
             });
          });
-      });
+      }
    });
 });
 
+// });
+
+*/
+
+// Route for user login
+router.post("/login", jsonParser, async (req, res, next) => {
+   // Extract email and password from request body
+   const { email, password } = req.body;
+
+   // Get user data from database by email
+   userService.getOne(email).then((data) => {
+      // If user not found, return error
+      if (data === null) {
+         return res.jsend.fail({ "result": "Incorrect email or password" });
+      }
+
+      // Verify password using PBKDF2
+      crypto.pbkdf2(password, data.salt, 310000, 32, 'sha256', function (err, hashedPassword) {
+         if (err) { return cb(err); }
+
+         // If password doesn't match, return error
+         if (!crypto.Buffer(data.encryptedPassword, hashedPassword)) {
+            return res.jsend.fail({ "result": "Incorrect email or password" });
+         }
+
+         // If password matches, create a JWT token
+         let token;
+         try {
+            token = jwt.sign(
+               { id: data.id, email: data.email },
+               process.env.ACCESS_TOKEN_SECRET,
+               { expiresIn: "1h" }
+            );
+         } catch (err) {
+            res.jsend.error("Something went wrong with creating JWT token")
+         }
+
+         // Return success with user data and JWT token
+         res.jsend.success({ "result": "You are logged in", "id": data.id, email: data.email, token: token });
+      });
+   });
+});
 
 
 

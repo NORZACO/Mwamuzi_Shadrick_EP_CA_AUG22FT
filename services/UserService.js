@@ -43,13 +43,13 @@ class UserService {
 
 
     // CHECK IF and CHECK ROLE ID EXIST
-    // async getUserRoleId(roleId) {
-    //     return this.User.findAll({
-    //         where: {
-    //             roleId: roleId
-    //         }
-    //     })
-    // }
+    async getUserRoleId(roleId) {
+        return this.User.findAll({
+            where: {
+                roleId: roleId
+            }
+        })
+    }
 
 
 
@@ -66,6 +66,7 @@ class UserService {
             }
         })
     }
+
 
 
 
@@ -160,8 +161,11 @@ class UserService {
     }
 
 
-
-
+    async getOne(Email) {
+        return this.User.findOne({
+            where: {email: Email}
+        })
+    }
 
 }
 

@@ -59,6 +59,7 @@ class RolesService {
 
 
 
+
     // get role by name
     async getRoleByName(roleName) {
         return this.Role.findOne(

@@ -60,54 +60,101 @@ class ItemServices {
     //     return item;
     // }
 
-    async findOrCreateCategory(categoryName) {
-        // Try to find or create the category
-        const [categoryInstance, created] = await Category.findOrCreate({
+    // async findOrCreateCategory(categoryName) {
+    //     // Try to find or create the category
+    //     const [categoryInstance, created] = await Category.findOrCreate({
+    //         where: { name: categoryName },
+    //         defaults: { name: categoryName }
+    //     });
+    //     return categoryInstance;
+    // }
+    async createItem(item_name, price, sku, stock_quantity, img_url, CategoryId) {
+        const Item = this.Item.create(
+            {
+                item_name, price, sku, stock_quantity, img_url, CategoryId
+            }
+        );
+        return Item;
+    }
+
+
+    // find by cat ny and return id
+    async findCategoryById(id) {
+        const catId = await this.Category.findByPk(id);
+        return catId.id;
+    }
+
+
+    // find or create category name and return id
+    async findOrCreateCategoryName(categoryName) {
+        const [categoryInstance, created] = await this.Category.findOrCreate({
             where: { name: categoryName },
             defaults: { name: categoryName }
         });
-        return categoryInstance;
+        if (created) {
+            // save
+            await categoryInstance.save();
+            console.log('Category id have been found and saved');
+            return categoryInstance.id;
+        }
+        return categoryInstance.id;
     }
 
-    async createItem(categName, itemImage, itemName, itemPrice, ItemSku, ItemStockQuantity) {
-        // Try to find or create the category
-        const item = await Item.findOrCreate({
-            where: { name: itemName },
-            defaults: {
+
+    // check item by sku, item_name, img_url and return sku, item_name, img_url
+    async checkItemBySkuAndItemNameAndImgUrl(itemSku, itemName, imgUrl) {
+        const item = await this.Item.findOne({
+            where: {
+                sku: itemSku,
                 item_name: itemName,
-                img_url: itemImage,
-                price: itemPrice,
-                sku: ItemSku,
-                stock_quantity: ItemStockQuantity,
-                categoryId: categName.id
-            }
+                img_url: imgUrl
+            },
+            attributes: ['sku', 'item_name', 'img_url', 'id']
         });
-        return item;
+        return await item;
     }
 
-    async addItemToCategory(item, category) {
-        item.categoryId = category.id;
-        await item.save();
-        return item;
-    }
+    // check item by sku OR item_name
+    // async checkItemBySkuOrItemName(itemSku, itemName) {
+    //     const item = await this.Item.findOne({
+    //         where: {
+    //             [Op.or]: [
+    //                 { sku: itemSku },
+    //                 { item_name: itemName }
+    //             ]
+    //         }
+    //     });
+    //     return item;
+    // }
 
 
 
-    async createItemWithCategory(data) {
-        const category = await this.findOrCreateCategory(data.category);
-        const item = await this.createItem(data, category.id);
-        return item;
-    }
+
+    
+
+
+    
 
 
 
 
-    async addItemToCart(itemId, userId) {
-        return this.CartItem.create({
-            itemId: itemId,
-            userId: userId
-        })
-    }
+
+
+
+    // async addItemToCategory(itemId, categoryId) {
+    //     const item = await this.Item.findByPk(itemId);
+    //     const category = await this.Category.findByPk(categoryId);
+    //     await item.setCategory(category);
+    //     return item;
+    // }
+
+
+    // async updateItem(id, item) {
+    //     const updatedItem = await this.Item.update(item, {
+    //         where: { id: id }
+    //     });
+    //     return updatedItem;
+    // }
 
 
 

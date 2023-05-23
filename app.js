@@ -34,8 +34,6 @@ db.sequelize.sync({ force: true }).then(() => {
 })
  */
 
-
-
 var app = express();
 
 // view engine setup
@@ -52,10 +50,10 @@ app.use(jsend.middleware);
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/auth', authRouter);
-app.use('/roles', rolesRouter);
+app.use('/', authRouter);
+app.use('/', rolesRouter);
 app.use('/categories', categoryRouter);
-app.use('/items', itemsRouter);
+app.use('/', itemsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

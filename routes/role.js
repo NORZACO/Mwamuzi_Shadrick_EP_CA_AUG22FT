@@ -26,7 +26,7 @@ router.get('/all', authenticateToken, async function (req, res, next) {
 
 
 // create new role
-router.post('/create', authenticateToken, jsonParser, async function (req, res, next) {
+router.post('/role', authenticateToken, jsonParser, async function (req, res, next) {
     try {
         const create_role = req.body.name
         // check if create_role already exist
