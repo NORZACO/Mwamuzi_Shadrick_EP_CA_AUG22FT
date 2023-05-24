@@ -35,11 +35,11 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
     },
 
-    salt: {
-      type: Sequelize.DataTypes.BLOB,
+    // salt: {
+    //   type: Sequelize.DataTypes.BLOB,
 
-      allowNull: false,
-    },
+    //   allowNull: false,
+    // },
 
     roleId: {
       type: Sequelize.DataTypes.INTEGER,

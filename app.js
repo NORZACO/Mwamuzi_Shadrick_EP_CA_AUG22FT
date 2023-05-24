@@ -32,7 +32,8 @@ db.sequelize.sync({ force: true }).then(() => {
   createCategoryIfNotFind();
   updateStock();
 })
- */
+*/ 
+
 
 var app = express();
 
@@ -76,3 +77,4 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+

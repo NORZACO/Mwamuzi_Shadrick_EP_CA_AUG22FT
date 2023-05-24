@@ -15,32 +15,55 @@ class UserService {
     }
 
     // INSERT INTO `stocksalesdb`.`users` (`id`, `username`, `email`, `encryptedPassword`, `salt`, `roleId`) VALUES (NULL, NULL, NULL, NULL, NULL, NULL);
-    async createUser(Username, Email, Salt, EncryptedPassword, RoleId) {
+    async createUser(Username, Email, EncryptedPassword, RoleId) {
         return this.User.create(
             {
                 username: Username,
                 email: Email,
-                salt: Salt,
                 encryptedPassword: EncryptedPassword,
                 roleId: RoleId
             }
         )
     }
 
-    // CHECK IF EMAIL EXIST
+    // CHECK IF EMAIL and returun email attribute
+    async checktUserByEmail(Email) {
+        return this.User.findOne(
+            {
+                where: {
+                    email: Email
+                }
+                ,
+                attributes: ['email']
+            }
+        )
+    }
+
+    // get by email and return encryptedPassword
+    async userByEmail(Email) {
+        const userHashpassword = this.User.findAll(
+            {
+                where: {
+                    email: Email
+                }
+                , attributes: ['encryptedPassword']
+            }
+        )
+        return userHashpassword.encryptedPassword
+    }
+
+
+
     async getUserByEmail(Email) {
         return this.User.findAll(
             {
                 where: {
                     email: Email
                 }
+                // ,  attributes: ['email', 'salt', 'encryptedPassword']
             }
-
         )
     }
-
-
-
 
     // CHECK IF and CHECK ROLE ID EXIST
     async getUserRoleId(roleId) {
@@ -145,20 +168,20 @@ class UserService {
 
 
     // get user by email getUserByEmail
-    async getUserByEmail(Email) {
-        return this.User.findAll(
-            {
-                where: {
-                    email: Email
-                },
-                include: {
-                    model: this.Role,
+    // async getUserByEmail(Email) {
+    //     return this.User.findAll(
+    //         {
+    //             where: {
+    //                 email: Email
+    //             },
+    //             include: {
+    //                 model: this.Role,
 
-                }
-            }
+    //             }
+    //         }
 
-        )
-    }
+    //     )
+    // }
 
 
     async getOne(Email) {
