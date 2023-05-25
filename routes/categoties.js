@@ -12,7 +12,7 @@ const authenticateToken = require('../securedEndpoint');
 
 
 // GET ALL CATEGORIES
-router.get('/all', authenticateToken, async function (req, res, next) {
+router.get('/categories', authenticateToken, async function (req, res, next) {
     try {
         const categories = await categoryService.getAllCategories();
         res.status(200).jsend.success({ ' result': categories });
@@ -24,7 +24,7 @@ router.get('/all', authenticateToken, async function (req, res, next) {
 
 
 // GET CATEGORY BY ID getCategoryById
-router.get('/byid/:id', authenticateToken, jsonParser, async function (req, res, next) {
+router.get('/category/:id', authenticateToken, jsonParser, async function (req, res, next) {
     const categoryId = req.params.id;
     if (!categoryId) {
         return res.status(400).jsend.fail({ 'result': 'categoryId is required' });
@@ -41,15 +41,16 @@ router.get('/byid/:id', authenticateToken, jsonParser, async function (req, res,
 });
 
 
+
 // POST createCategory
-router.post('/create', authenticateToken, jsonParser, async function (req, res, next) {
+router.post('/category', authenticateToken, jsonParser, async function (req, res, next) {
     const { name } = req.body;
     if (!name) {
         return res.status(400).jsend.fail({ 'result': 'name is required' });
     }
     try {
         const category = await categoryService.createCategory(name);
-        return res.status(200).jsend.success({ 'result': category });
+        return res.status(200).jsend.success({ 'result': category.name });
     } catch (error) {
         return res.status(500).jsend.fail({ 'result': error.message });
     }
@@ -58,7 +59,7 @@ router.post('/create', authenticateToken, jsonParser, async function (req, res, 
 
 
 // PUT updateCategory
-router.put('/update/:id', authenticateToken, jsonParser, async function (req, res, next) {
+router.put('/category/:id', authenticateToken, jsonParser, async function (req, res, next) {
     const categoryId = req.params.id;
     const { name } = req.body;
     if (!categoryId) {
@@ -67,6 +68,14 @@ router.put('/update/:id', authenticateToken, jsonParser, async function (req, re
     if (!name) {
         return res.status(400).jsend.fail({ 'result': 'name is required' });
     }
+
+    const category = await categoryService.getCategoryName(name, categoryId);
+    if (category) {
+        return res.status(400).jsend.fail({ 'result': 'Category aleady exist' });
+    }
+
+
+
     try {
         const category = await categoryService.updateCategory(categoryId, name);
         if (!category) {
@@ -80,7 +89,26 @@ router.put('/update/:id', authenticateToken, jsonParser, async function (req, re
 
 
 // POST deleteCategory
-router.post('/delete/:id', authenticateToken, jsonParser, async function (req, res, next) {
+// router.post('/category/:id', authenticateToken, jsonParser, async function (req, res, next) {
+//     const categoryId = req.params.id;
+//     if (!categoryId) {
+//         return res.status(400).jsend.fail({ 'result': 'categoryId is required' });
+//     }
+//     try {
+//         const category = await categoryService.deleteCategory(categoryId);
+//         if (!category) {
+//             return res.status(400).jsend.fail({ 'result': 'Category with given id not found' });
+//         }
+//         return res.status(200).jsend.success({ 'result': category });
+//     } catch (error) {
+//         return res.status(500).jsend.fail({ 'result': error.message });
+//     }
+// });
+
+
+
+// DELETE category deleteCategory
+router.delete('/category/:id', authenticateToken, jsonParser, async function (req, res, next) {
     const categoryId = req.params.id;
     if (!categoryId) {
         return res.status(400).jsend.fail({ 'result': 'categoryId is required' });
@@ -95,6 +123,8 @@ router.post('/delete/:id', authenticateToken, jsonParser, async function (req, r
         return res.status(500).jsend.fail({ 'result': error.message });
     }
 });
+
+
 
 
 

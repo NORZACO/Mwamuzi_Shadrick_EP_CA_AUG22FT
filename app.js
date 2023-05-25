@@ -25,14 +25,14 @@ const { updateStock, createCategoryIfNotFind, updateItem } = require('./Utility/
 db.sequelize.sync({ force: false });
 console.log("All models were synchronized successfully.");
 
- /*
+ /* 
 db.sequelize.sync({ force: true }).then(() => {
   console.log("Drop and re-sync db.");
 }).then(() => {
   createCategoryIfNotFind();
   updateStock();
 })
-*/ 
+*/
 
 
 var app = express();
@@ -53,7 +53,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/', authRouter);
 app.use('/', rolesRouter);
-app.use('/categories', categoryRouter);
+app.use('/', categoryRouter);
 app.use('/', itemsRouter);
 
 // catch 404 and forward to error handler

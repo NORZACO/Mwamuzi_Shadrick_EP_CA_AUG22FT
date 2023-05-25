@@ -19,24 +19,36 @@ class CatergotyServices {
     async getAllCategories() {
         return this.Category.findAll({
             attributes: ['id', 'name'],
-            include: {
-                model: this.Item,
-                // attributes: ['id', 'item_name', 'price', 'categoryId']
-            }
+            // include: {
+            //     model: this.Item,
+            //     // attributes: ['categoryId']
+            // }
         })
     }
 
+    // getCategoryName
+    async getCategoryName(categName, categId) {
+        const categoryName = await this.Category.findOne(
+            {
+                where: {
+                    name: categName,
+                    id: categId
+                }
+            })
+        return await categoryName
+    }
 
+    // getCategoryById
     async getCategoryById(id) {
-        return this.Category.findAll({
+        return this.Category.findOne({
             where: {
                 id: id
             },
             attributes: ['id', 'name'],
-            include: {
-                model: this.Item,
-                attributes: ['id', 'name', 'price', 'categoryId']
-            }
+            // include: {
+            //     model: this.Item,
+            //     attributes: ['id', 'name', 'price', 'categoryId']
+            // }
         })
     }
 
@@ -59,13 +71,39 @@ class CatergotyServices {
     }
 
 
-    async deleteCategory(id) {
+    async deleteCategoryWithNoItems(id) {
         return this.Category.destroy({
             where: {
                 id: id
             }
         })
     }
+
+    //deleteCategory before delete hook
+    async deleteCategory(id) {
+        const category = await this.Category.findByPk(id)
+        if (!category) {
+            throw new Error('Category with given id not found');
+        }
+
+        // item count
+        const itemCount = await this.Item.count({
+            where: {
+                categoryId: id
+            }
+        });
+        if (itemCount > 0) {
+            throw new Error('Category has items');
+        }
+        return category.destroy();
+    }
+
+
+
+
+    //
+
+
 
 
     // getCategoryByName
@@ -83,7 +121,21 @@ class CatergotyServices {
     }
 
 
-  
+
+
+
+    //   getCategoryByname
+    //   async getCategoryByname(name) {
+    //     return this.Category.findAll({
+    //       where: {
+    //         name: name
+    //       },
+    //       attributes: ['id', 'name'],
+    //       include: {
+    //         model: this.Item,
+    //         attributes: ['id', 'item_name', 'price', 'categoryId']
+    //       }
+    //     })
 
 
 

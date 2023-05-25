@@ -28,15 +28,37 @@ class RolesService {
 
 
     // delete Role
+    // async deleteRole(roleId) {
+    //     return this.Role.destroy(
+    //         {
+    //             where: {
+    //                 id: roleId
+    //             }
+    //         }
+    //     )
+    // }
+
+    //deletingRole before delete hook
     async deleteRole(roleId) {
-        return this.Role.destroy(
-            {
-                where: {
-                    id: roleId
-                }
+        const role = await this.Role.findByPk(roleId);
+        if (!role) {
+            throw new Error('Role not found');
+        }
+
+        // user count
+        const userCount = await this.User.count({
+            where: {
+                roleId: roleId
             }
-        )
+        })
+        if (userCount > 0) {
+            throw new Error('Role cannot be deleted because it is used by one or more users');
+        }
+
+        return role.destroy();
     }
+
+
 
     //GET ALL ROLES
     async getAllRoles() {
@@ -66,6 +88,21 @@ class RolesService {
             {
                 where: {
                     name: roleName
+                }
+            }
+        )
+    }
+
+
+    // UPFATE 
+    async updateRole(roleId, roleName) {
+        return this.Role.update(
+            {
+                name: roleName
+            },
+            {
+                where: {
+                    id: roleId
                 }
             }
         )

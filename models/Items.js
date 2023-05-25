@@ -9,10 +9,11 @@ module.exports = (sequelize, Sequelize) => {
 
     Item.associate = models => {
         Item.belongsToMany(models.Cart, { through: models.CartItem }, { timestamps: false });
-
         Item.belongsToMany(models.Order, { through: models.OrderItem }, { timestamps: false });
         Item.belongsTo(models.Category);
     };
 
     return Item;
 };
+
+

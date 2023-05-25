@@ -25,17 +25,26 @@ class ItemServices {
 
 
     async getItemById(id) {
-        return this.Item.findAll({
+        return await this.Item.findAll({
             where: {
                 id: id
             },
-            attributes: ['id', 'name', 'price', 'categoryId'],
+            attributes: ['id', 'item_name', 'price', 'categoryId'],
             include: {
                 model: this.Category,
                 attributes: ['id', 'name']
             }
         })
     }
+
+    // GET ITEM BY PK ID and return all attribute
+
+
+    async getItemByPK(itemPK) {
+        return await this.Item.findByPk(itemPK)
+    }
+
+    
 
 
     // https://sequelize.org/docs/v6/core-concepts/model-querying-finders/#findorcreate
@@ -69,23 +78,29 @@ class ItemServices {
     //     return categoryInstance;
     // }
     async createItem(item_name, price, sku, stock_quantity, img_url, CategoryId) {
-        const Item = this.Item.create(
-            {
-                item_name, price, sku, stock_quantity, img_url, CategoryId
-            }
-        );
+        const Item = await this.Item.create({
+                item_name, price, 
+                sku, stock_quantity, 
+                img_url, CategoryId
+            });
         return Item;
     }
 
 
-    // find by cat ny and return id
-    async findCategoryById(id) {
-        const catId = await this.Category.findByPk(id);
-        return catId.id;
+    // find by cat ny and return attribute id
+    async findCategoryById(category_id) {
+        const category = await this.Category.findOne({
+            where: {
+                id: category_id
+            },
+            attributes: ['id']
+        });
+        return await category?.id;
     }
 
 
-    // find or create category name and return id
+
+    // find or create category name and return id | NOT IN USED
     async findOrCreateCategoryName(categoryName) {
         const [categoryInstance, created] = await this.Category.findOrCreate({
             where: { name: categoryName },
@@ -114,6 +129,76 @@ class ItemServices {
         return await item;
     }
 
+
+
+    // Check item by  item_name, price, sku, stock_quantity, img_url, CategoryId
+    async checkItemByAllAttributes(itemId, item_name, price, sku, stock_quantity, img_url, CategoryId) {
+        const item = await this.Item.findOne({
+            where: {
+                id : itemId, 
+                item_name: item_name,
+                price: price,
+                sku: sku,
+                stock_quantity: stock_quantity,
+                img_url: img_url,
+                CategoryId: CategoryId
+            },
+            // attribute itemId, item_name, price, sku, stock_quantity, img_url, CategoryId
+            attributes: ['id', 'item_name', 'price', 'sku', 'stock_quantity', 'img_url', 'CategoryId']
+        });
+        return await item;
+    }
+    // add item to db
+
+
+
+
+
+    // UPDATE
+    async updateItem(id, item_name, price, sku, stock_quantity, img_url, CategoryId) {
+        const item = await this.Item.update({
+            item_name, price, sku, stock_quantity, img_url, CategoryId
+        }, {
+            where: { id: id }
+        });
+        return item;
+    }
+    // DELETE
+
+
+
+
+
+
+
+
+
+
+// delete
+    async deleteItem(id) {
+        const item = await this.Item.destroy({
+            where: { id: id }
+        });
+        return item;
+    }
+    // DELETE ALL
+    async deleteAllItems() {
+        const item = await this.Item.destroy({
+            where: {},
+            truncate: false
+        });
+        return item;
+    }
+
+
+
+
+
+
+
+
+
+
     // check item by sku OR item_name
     // async checkItemBySkuOrItemName(itemSku, itemName) {
     //     const item = await this.Item.findOne({
@@ -126,18 +211,6 @@ class ItemServices {
     //     });
     //     return item;
     // }
-
-
-
-
-    
-
-
-    
-
-
-
-
 
 
 
@@ -155,26 +228,6 @@ class ItemServices {
     //     });
     //     return updatedItem;
     // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 module.exports = ItemServices;

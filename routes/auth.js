@@ -46,7 +46,7 @@ router.post('/login', jsonParser, async function (req, res, next) {
    const user = await userService.getUserByEmail(email);
 
    if (!user) {
-      return res.status(400).json({ message: "Email does not exist" });
+      return res.status(400).json({ 'result': "Email does not exist" });
    }
 
 
@@ -59,7 +59,7 @@ router.post('/login', jsonParser, async function (req, res, next) {
          // try
          try {
             token = jwt.sign({ email: user[0]?.email, userId: user[0]?.id }, process.env.ACCESS_TOKEN_SECRET, {
-               expiresIn: "1h"
+               expiresIn: "1 day"
             });
          } catch (err) {
             return res.status(401).json({ 'result' : err.message });
