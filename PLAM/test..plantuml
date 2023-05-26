@@ -1,0 +1,22 @@
+@startuml
+
+left to right direction
+
+actor Customer
+actor Admin
+actor Guest
+
+rectangle OnlineShoppingSystem {
+    Customer -- (Search Products)
+    Customer -- (Add to Cart)
+    Customer -- (Checkout)
+    Customer -- (View Order Status)
+    Customer -- (Contact Customer Support)
+    
+    (Manage Products) <-- Admin
+    (Manage Orders) <-- Admin
+    (Manage Customers) <-- Admin
+    Guest --> (Admin the application)
+}
+
+@enduml

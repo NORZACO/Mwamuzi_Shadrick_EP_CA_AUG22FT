@@ -1,0 +1,52 @@
+@startuml 'user 1'
+' allowmixing
+title REGISTER USER CASE SCENA
+
+skinparam actorStyle awesome
+
+"GUEST USER" as Guest
+Guest -> (Start)
+
+actor Guest
+
+
+rectangle "Authentication" {
+    Guest --> (REGISTER)
+    (REGISTER) --> (LOGIN AND GET TOKEN )  : YES
+    (LOGIN AND GET TOKEN ) --> (GET THE CART)
+    note left of  (LOGIN AND GET TOKEN ) : - username\n- password\n- email
+
+
+(LOGIN AND GET TOKEN ) --> (CAN VIEWS CART) : normal
+(LOGIN AND GET TOKEN ) --> (USER1) #blue;line.bold;text:blue : normal
+(LOGIN AND GET TOKEN ) --> (CAN ORDER) : normal
+(LOGIN AND GET TOKEN ) --> (CAN ADD TO CART ITEMS ) : normal
+(USER1) --> (CART)
+(CART) --> (USERS)
+(USERS) -- (ROLES)
+(CART) --> (CART ITEMS)
+(CART ITEMS)  --> (ITEMS)
+(ITEMS) --> (ORDER ITEMS) 
+(ITEMS) --> (CATEGORIES)
+(ORDER ITEMS) --> (ORDER) : ITEM
+(ORDER) --> (USERS)
+
+    
+note right of  (CART) : id, createdAt, updatedAt, UserId
+note right of  (USERS) : id, username, email, encryptedPassword, roleId
+note right of  (ORDER ITEMS) : quantity, price, ItemId, OrderId
+note right of  (ITEMS) : id, item_name, price, sku, stock_quantity, img_url, CategoryId
+note right of  (CART ITEMS) : quantity, CartId, ItemId
+
+
+}
+
+@enduml
+
+
+' skinparam actorStyle awesome
+' :User: --> (Use)
+' "Main Admin" as Admin
+' "Use the application" as (Use)
+' Admin --> (Admin the application)
+' @enduml

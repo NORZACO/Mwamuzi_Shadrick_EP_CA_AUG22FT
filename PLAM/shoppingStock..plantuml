@@ -1,0 +1,91 @@
+@startuml 'test'
+
+' right to left direction
+left to right direction
+' skinparam actor {
+'   BackgroundColor #61b5ff
+'   BorderColor #0054a6
+' }
+
+
+
+' actor :Last actor: as Person1
+' (First usecase)
+
+
+actor "Guest User" as GuestUser
+' actor "Registered User" as RegisteredUser
+' actor "Admin User" as AdminUser #FF0000/FFFF00
+' GuestUser -> RegisteredUser : Sign Up
+' GuestUser -> RegisteredUser : Login
+
+
+
+rectangle "Online Shopping System" {
+  GuestUser -- (Register)
+  GuestUser -- (Browse Items Catalogue)
+  GuestUser -- (View Item Details)
+'   RegisteredUser -- (Login)
+'   RegisteredUser -- (Browse Items Catalogue)
+'   RegisteredUser -- (Search Items)
+'   RegisteredUser -- (Add Item to Cart)
+'   RegisteredUser -- (View Cart)
+'   RegisteredUser -- (Checkout)
+'   RegisteredUser -- (View Order)
+'   AdminUser -- (Manage Items)
+'   AdminUser -- (Manage Orders)
+}
+
+
+'
+
+
+
+rectangle "login" {
+    GuestUser -- (Register)
+    GuestUser -- (Login)
+
+    ' RegisteredUser -- (Login)
+    ' AdminUser -- (Login)
+}
+
+' rectangle "browse" {
+'     GuestUser -- (Browse Items Catalogue)
+'     RegisteredUser -- (Browse Items Catalogue)
+' }
+
+' ' rectangle "search" {
+'     RegisteredUser -- (Search Items)
+' }
+
+
+' rectangle "cart" {
+'     RegisteredUser -- (Add Item to Cart)
+'     RegisteredUser -- (View Cart)
+'     RegisteredUser -- (Checkout)
+' }
+
+' rectangle "order" {
+'     RegisteredUser -- (View Order)
+'     AdminUser -- (Manage Orders)
+' }
+
+' rectangle "item" {
+'     GuestUser -- (View Item Details)
+'     RegisteredUser -- (View Item Details)
+'     AdminUser -- (Manage Items)
+' }
+
+' rectangle "admin" {
+'     AdminUser -- (Manage Items)
+'     AdminUser -- (Manage Orders)
+' }
+
+
+
+
+
+
+
+
+@enduml

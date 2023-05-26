@@ -19,20 +19,26 @@ const rolesRouter = require('./routes/role');
 const categoryRouter = require('./routes/categoties');
 // itemsRouter
 const itemsRouter = require('./routes/items');
-// ordersRouter
+// cartsRouter
+const cartsRouter = require('./routes/carts');
+
+
+
+
+
 const { updateStock, createCategoryIfNotFind, updateItem } = require('./Utility/index');
 
 db.sequelize.sync({ force: false });
 console.log("All models were synchronized successfully.");
 
- /* 
+/*
 db.sequelize.sync({ force: true }).then(() => {
   console.log("Drop and re-sync db.");
 }).then(() => {
   createCategoryIfNotFind();
   updateStock();
 })
-*/
+  */
 
 
 var app = express();
@@ -55,6 +61,7 @@ app.use('/', authRouter);
 app.use('/', rolesRouter);
 app.use('/', categoryRouter);
 app.use('/', itemsRouter);
+app.use('/', cartsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -68,12 +75,12 @@ app.use(function(err, req, res, next) {
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   // render the error page
-  // res.status(err.status || 500);
-  // res.render('error');
+  res.status(err.status || 500);
+  res.render('error');
 
 
   // try get error in jsend
-  res.status(err.status || 500).jsend.fail({'result' : err.message});
+  // res.status(err.status || 500).jsend.fail({'result' : err.message});
 });
 
 module.exports = app;
