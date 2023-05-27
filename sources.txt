@@ -2,3 +2,6 @@
 
 Dec 12, 2018 || Build a Node.js App With Sequelize [3] - Add & Search 
 link: https://youtu.be/6jbrWF3BWM0
+
+
+	

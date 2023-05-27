@@ -14,7 +14,7 @@ const authenticateToken = require('../securedEndpoint');
 
 
 // GET ALL CART CartServices
-router.get('/carts', authenticateToken, async function (req, res, next) {
+router.get('/allcarts', authenticateToken, async function (req, res, next) {
     try {
         const carts = await cartServices.getAllCart();
         res.status(200).jsend.success({ ' result': carts });
