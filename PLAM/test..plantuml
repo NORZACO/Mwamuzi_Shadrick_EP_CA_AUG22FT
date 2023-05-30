@@ -1,22 +1,32 @@
-@startuml
+' @startuml 'LEVE1'
 
-left to right direction
+' left to right direction
 
-actor Customer
-actor Admin
-actor Guest
+' actor Customer
+' actor Admin
+' actor Guest
 
-rectangle OnlineShoppingSystem {
-    Customer -- (Search Products)
-    Customer -- (Add to Cart)
-    Customer -- (Checkout)
-    Customer -- (View Order Status)
-    Customer -- (Contact Customer Support)
+' rectangle OnlineShoppingSystem {
+'     Customer -- (Search Products)
+'     Customer -- (Add to Cart)
+'     Customer -- (Checkout)
+'     Customer -- (View Order Status)
+'     Customer -- (Contact Customer Support)
     
-    (Manage Products) <-- Admin
-    (Manage Orders) <-- Admin
-    (Manage Customers) <-- Admin
-    Guest --> (Admin the application)
-}
+'     (Manage Products) <-- Admin
+'     (Manage Orders) <-- Admin
+'     (Manage Customers) <-- Admin
+'     Guest --> (Admin the application)
+' }
 
+' @enduml
+
+
+@startuml 'LEVE2'
+Client -> API: POST /cart_item
+API -> API: Authenticate User
+API -> Database: Retrieve User and Item Details
+API -> Database: Create Cart Item
+API --> Client: Return Success Response
 @enduml
+

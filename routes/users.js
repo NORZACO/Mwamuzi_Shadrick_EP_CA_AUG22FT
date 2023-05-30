@@ -40,6 +40,15 @@ router.get('/byid/:id', authenticateToken, jsonParser, async function (req, res,
 });
 
 
+// all user
+router.get('/user/all', authenticateToken, async function (req, res, next) {
+  try {
+      const users = await userService.DisplayAllUser();
+      res.status(200).jsend.success({ 'result': users });
+  } catch (error) {
+      res.status(500).jsend.fail({ 'result': error.message });
+  }
+});
 
 // UPDATE USER
 // router.put('/byid/:id', authenticateToken, jsonParser, async function (req, res, next) {

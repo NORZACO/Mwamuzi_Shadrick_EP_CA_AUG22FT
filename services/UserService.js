@@ -1,5 +1,5 @@
 const { Op, sequelize } = require("sequelize");
-
+const bcrypt = require('bcrypt');
 
 class UserService {
     constructor(db) {
@@ -15,16 +15,56 @@ class UserService {
     }
 
     // INSERT INTO `stocksalesdb`.`users` (`id`, `username`, `email`, `encryptedPassword`, `salt`, `roleId`) VALUES (NULL, NULL, NULL, NULL, NULL, NULL);
-    async createUser(Username, Email, EncryptedPassword, RoleId) {
-        return this.User.create(
-            {
+    async createUser(Username, Email, password, RoleId) {
+        // check if user with same username Exist
+        const user = await this.User.findOne({ where: { username: Username } });
+        if (user) {
+            throw new Error('User with a given username already exist');
+        }
+        // check if user with same email Exist
+        const useremail = await this.User.findOne({ where: { email: Email } });
+        if (useremail) {
+            throw new Error('User with a given email already exist');
+        }
+        // check if role with same roleId Exist
+        const role = await this.Role.findOne({ where: { id: RoleId } });
+        if (!role) {
+            throw new Error('Role with a given roleId not found');
+        }
+        // check if the role is admin. return error
+        if (role.name === 'Admin') {
+            throw new Error('You can not create admin user, chnage role id to 2');
+        }
+
+
+
+        // await sequelize.transaction
+        const t = await this.client.transaction();
+        try {
+            const santRount = 10;
+            const EncryptedPassword = await bcrypt.hash(password, santRount);
+
+            const newUser = await this.User.create({
                 username: Username,
                 email: Email,
                 encryptedPassword: EncryptedPassword,
                 roleId: RoleId
-            }
-        )
+            }, {
+                transaction: t
+            });
+
+            await t.commit();
+
+            return newUser;
+
+        } catch (error) {
+            await t.rollback();
+            throw error;
+        }
     }
+
+
+
 
     // CHECK IF EMAIL and returun email attribute
     async checktUserByEmail(Email) {
@@ -104,28 +144,6 @@ class UserService {
 
 
 
-    // async getUserByName(username) {
-    //     return await this.User.findOne({
-    //         where: { username: username },
-    //         include: {
-    //             model: this.CartItem,
-    //             through: {
-    //                 attributes: ['quantity']
-    //             },
-    //             include: {
-    //                 model: this.CartItem
-    //             }
-    //         }
-    //     });
-    // }
-
-    // async deleteUser(userId) {
-    //     return this.User.destroy({
-    //         where: { id: userId }
-    //     })
-    // }
-
-
     // update user updateUser
     async updateUser(UserId, Username, Email, Salt, EncryptedPassword) {
         return this.User.update(
@@ -153,45 +171,32 @@ class UserService {
     }
 
 
-    // remove removeRole
-    // async removeRole(userId, roleId) {
-    //     return this.UserRole.destroy(
-    //         {
-    //             where: {
-    //                 UserId: userId,
-    //                 RoleId: roleId
-    //             }
-    //         }
-    //     )
-    // }
-
-
-
-    // get user by email getUserByEmail
-    // async getUserByEmail(Email) {
-    //     return this.User.findAll(
-    //         {
-    //             where: {
-    //                 email: Email
-    //             },
-    //             include: {
-    //                 model: this.Role,
-
-    //             }
-    //         }
-
-    //     )
-    // }
-
 
     async getOne(Email) {
         return this.User.findOne({
-            where: {email: Email}
+            where: { email: Email }
         })
     }
 
-}
 
+
+    // DisplayAllUser
+    async DisplayAllUser() {
+        return this.User.findAll(
+            {
+                attributes: ['id', 'username', 'email'],
+                include: {
+                    model: this.Role,
+                    attributes: ['id', 'name']
+                }
+            }
+        )
+    }
+
+
+
+
+}
 //TODO: Creat user service
 module.exports = UserService;
 

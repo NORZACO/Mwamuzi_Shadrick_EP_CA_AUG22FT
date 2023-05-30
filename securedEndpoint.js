@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -9,8 +10,8 @@ function authenticateToken(req, res, next) {
       message: 'Missing or invalid JWT token. Please include a valid token in the Authorization header of your request.'
     });
   }
-
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+  const options = { expiresIn: '12h', }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, options, (err, user) => {
     if (err) {
       return res.status(403).json({
         status: 'fail',
@@ -19,7 +20,8 @@ function authenticateToken(req, res, next) {
     }
     req.user = user;
     next();
-  });
+  }
+  );
 }
 
 

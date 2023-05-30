@@ -8,95 +8,104 @@ const db = require('../models');
 const cartServices = new CartServices(db);
 router.use(jsend.middleware);
 const authenticateToken = require('../securedEndpoint');
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 
 
 
 
-// GET ALL CART CartServices
-router.get('/allcarts', authenticateToken, async function (req, res, next) {
+// GET ALL CARTS
+router.get('/allcarts', authenticateToken, async (req, res) => {
     try {
-        const carts = await cartServices.getAllCart();
-        res.status(200).jsend.success({ ' result': carts });
+        const carts = await cartServices.getAllCarts();
+        res.jsend.success({
+            "result": carts
+        });
     } catch (error) {
-        res.status(500).jsend.fail({ 'result': error.message });
-    }
-});
-
-
- // addItemToCart id, createdAt, updatedAt, UserId item to Cart
-router.post('/cart_item', authenticateToken, jsonParser, async function (req, res, next) {
-    try {
-        const { quantity, CartId, ItemId } = req.body;
-        const cart = await cartServices.addItemToCart(quantity, CartId, ItemId);
-        res.status(200).jsend.success({ 'result': cart });
-    } catch (error) {
-        res.status(500).jsend.fail({ 'result': error.message });
+        res.jsend.fail({ "result": error.message });
     }
 });
 
 
 
-//CREATE CART with the loggin user userid
-router.post('/cart', authenticateToken, jsonParser, async function (req, res, next) {
+// GET CART BY ID
+router.get('/cart', authenticateToken, jsonParser, async (req, res) => {
+    const cartId = req.user.userId;
+    if (!cartId) {
+        return res.status(400).jsend.fail({ "result": "cartId is required" });
+    }
     try {
-        const { UserId } = req.body;
-        const userExist = await cartServices.findUserById(UserId);
-        if (!userExist) {
-            res.status(400).jsend.fail({ 'result': 'User is not found' });
+        const cart = await cartServices.getCartByUserId(cartId);
+        if (!cart) {
+            return res.status(400).jsend.fail({ "result": "Cart with given id not found" });
         }
-        // user exist in any cart
-        // const cartExist = await cartServices.findCartByUserId(UserId);
-        // if (cartExist) {
-        //     res.status(400).jsend.fail({ 'result': 'User already has a cart' });
-        // }
-    
-        const cart = await cartServices.createCart(UserId);
-        res.status(200).jsend.success({ 'result': cart });  
+        return res.status(200).jsend.success({ "result": cart });
     } catch (error) {
-        res.status(500).jsend.fail({ 'result': error.message });
+        return res.status(500).jsend.fail({ "result": error.message });
     }
 });
 
 
 
+// createCartAndCartitem JWTuserId, ItemId, ItemQuantity
+router.post('/cart_item', authenticateToken, jsonParser, async (req, res) => {
+    const UserId = req.user.userId;
+    const { ItemId, itemQuantity } = req.body;
+    const missingFiels = [];
+    if (!UserId) missingFiels.push('UserId');
+    if (!ItemId) missingFiels.push('ItemId');
+    if (!itemQuantity) missingFiels.push('itemQuantity');
+    if (missingFiels.length) {
+        return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
+    }
+
+    // rejex all, only number
+    const regexNumber = /^[0-9]*$/;
+    if (!regexNumber.test(itemQuantity)) {
+        return res.status(400).jsend.fail({ "result": "itemQuantity must be a number" });
+    }
+    // itemid
+    const regexItemId = /^[0-9]*$/;
+    if (!regexItemId.test(ItemId)) {
+        return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
+    }
+    // UserId
+    const regexUserId = /^[0-9]*$/;
+    if (!regexUserId.test(UserId)) {
+        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
+    }
+
+    // checkCartbyJWT
+    const cart = await cartServices.getCartByUserId(UserId);
+    if (!cart) {
+        return res.status(400).jsend.fail({ "result": "Cart with given id not found" });
+    }
+
+    // reTurnStock
+    const itemreTurnStock = await cartServices.reTurnStock(ItemId);
+    if (!itemreTurnStock) {
+        return res.status(400).jsend.fail({ "result": "Item with given id not found" });
+    }
+    // if (itemQuantity > itemreTurnStock) {
+    //     return res.status(400).jsend.fail({ "result": "ItemQuantity must be less than stock" });
+    // }
 
 
+    try {
+        // calculate the stock
+        const calculate_stock = itemreTurnStock - itemQuantity;
+        // create cart
+        const NewCart = await cartServices.createCart(UserId, itemQuantity, ItemId, calculate_stock);
+
+        return res.status(200).jsend.success({ "result": NewCart });
+    } catch (error) {
+        return res.status(500).jsend.fail({ "result": error.message });
+    }
+});
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// createOrderAndOrderItem
 
 
 
