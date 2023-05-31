@@ -5,6 +5,7 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.DataTypes.STRING,
       unique: true,
       allowNull: false,
+      defaultValue : 'Guest'
     },
 
   }, {

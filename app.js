@@ -21,6 +21,9 @@ const categoryRouter = require('./routes/categoties');
 const itemsRouter = require('./routes/items');
 // cartsRouter
 const cartsRouter = require('./routes/carts');
+// orderRouter
+const orderRouter = require('./routes/order');
+
 
 
 
@@ -41,7 +44,7 @@ db.sequelize.sync({ force: false }).then(() => {
 // }).then(() => {
 //   createCategoryIfNotFind();
 //   updateStock()
-//   // updateItem(); 
+
 // })
 
 
@@ -69,6 +72,7 @@ app.use('/', rolesRouter);
 app.use('/', categoryRouter);
 app.use('/', itemsRouter);
 app.use('/', cartsRouter);
+app.use('/', orderRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

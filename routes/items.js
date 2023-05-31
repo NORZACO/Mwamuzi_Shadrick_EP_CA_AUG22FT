@@ -35,7 +35,7 @@ router.get('/item/:itemId', authenticateToken, jsonParser, async function (req, 
             res.status(400).jsend.fail({ 'result': 'Item with given id not found' });
         }
 
-        const item = await itemsService.getItemById(itemId);
+        const item = await itemsService.getItemByPK(itemId);
         if (item) {
             res.status(200).jsend.success({ 'result': item });
         }
@@ -63,11 +63,6 @@ router.post('/item', authenticateToken, jsonParser, async function (req, res, ne
     if (!stockQuantity) bodyarray.push('stockQuantity')
     if (!itemCategoryId) bodyarray.push('itemCategoryId')
 
-    // if (!img_url) bodyarray.push('img_url')
-    // if (!price) bodyarray.push('price')
-    // if (!sku) bodyarray.push('sku')
-    // if (!stock_quantity) bodyarray.push('stock_quantity')
-    // if (!CategoryId) bodyarray.push('CategoryId')
     if (bodyarray.length > 0) {
         // Create an error message with a list of missing fields
         const errorMessage = `Missing required ${bodyarray.join(', ')} fields`;
@@ -77,27 +72,9 @@ router.post('/item', authenticateToken, jsonParser, async function (req, res, ne
         return res.status(400).jsend.fail({ "result": errorMessage, ...missingFieldsObject });
     }
 
-    // const CategoryId = await itemsService.findOrCreateCategoryName(categoryName);
-
-
-    const checkingItems = await itemsService.checkItemBySkuAndItemNameAndImgUrl(itemSku, itemName, imgUrl);
-    if (checkingItems) {
-        return res.status(400).jsend.fail({
-            'result': `Item already exist, if you want to update use this endpoint http://127.0.0.1:3000/item/${checkingItems.id}`,
-            'sku': checkingItems.sku,
-            'item_name': checkingItems.item_name,
-            'img_url': checkingItems.img_url
-        });
-    }
     try {
-        // const item = await itemsService.createItem(itemName, imgUrl, itemPrice, itemSku, stockQuantity, itemCategoryId);
-        // const item = await itemsService.createItem(itemName, imgUrl, itemPrice, itemSku, stockQuantity, categoryId);
-        const categoryId = await itemsService.findCategoryById(itemCategoryId);
-        if (!categoryId) {
-            return res.status(400).jsend.fail({ 'result': 'Category with given id not found' });
-        }
 
-        const item = await itemsService.createItem(itemName, itemPrice, itemSku, stockQuantity, imgUrl, categoryId);
+        const item = await itemsService.createItem(itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId);
         return res.status(201).jsend.success({ 'result': item });
     }
     catch (error) {
@@ -129,18 +106,9 @@ router.put('/item/:itemId', authenticateToken, jsonParser, async function (req, 
         return res.status(400).jsend.fail({ "result": errorMessage, ...missingFieldsObject });
     }
 
-    // use switch
-    const checkingItemx = await itemsService.checkItemByAllAttributes(itemId, itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId);
-    if (checkingItemx) {
-        return res.status(400).jsend.fail({ 'result': `Item already exist` })
-    }
-    const categoryId = await itemsService.findCategoryById(itemCategoryId);
-    if (!categoryId) {
-        return res.status(400).jsend.fail({ 'result': 'Category with given id not found' });
-    }
     // UPDATE
     try {
-        const item = await itemsService.updateItem(itemId, itemName, itemPrice, itemSku, stockQuantity, imgUrl, categoryId);
+        const item = await itemsService.updateItem(itemId, itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId);
         return res.status(200).jsend.success({ 'result': item });
     }
     catch (error) {

@@ -34,15 +34,11 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
     },
 
-    // salt: {
-    //   type: Sequelize.DataTypes.BLOB,
-
-    //   allowNull: false,
-    // },
 
     roleId: {
       type: Sequelize.DataTypes.INTEGER,
       allowNull: false,
+      defaultValue : 2
     },
 
   },
@@ -52,15 +48,8 @@ module.exports = (sequelize, Sequelize) => {
   );
 
 
-  // User.associate = models => {
-  //   User.hasOne(models.Cart);
-  //   User.hasMany(models.Order);
-  //   User.belongsTo(models.Role, { targetKey: 'roleId', timestamps: false });
-  // };
-
-
   User.associate = models => {
-    User.hasOne(models.Cart);
+    User.hasOne(models.Cart)
     User.hasMany(models.Order);
     User.belongsTo(models.Role, { foreignKey: 'roleId' });
   };

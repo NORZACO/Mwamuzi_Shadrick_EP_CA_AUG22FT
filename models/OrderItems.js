@@ -5,8 +5,13 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.INTEGER,
       defaultValue: 1
     },
-    price: Sequelize.FLOAT
+
+    price: {
+      type: Sequelize.FLOAT,
+      allowNull: false
+    }
   },
+
     { timestamps: false }
   );
 

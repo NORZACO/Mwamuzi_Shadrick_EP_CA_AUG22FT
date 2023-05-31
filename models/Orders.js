@@ -1,10 +1,23 @@
 module.exports = (sequelize, Sequelize) => {
     const Order = sequelize.define('Order', {
-        order_date: {
+        // status
+        status: {
+            type: Sequelize.ENUM,
+            values: ['pending', 'completed', 'cancelled'],
+            defaultValue: 'pending'
+        },
+
+        totalPrice : {
+            type: Sequelize.FLOAT,
+            allowNull: false,
+        },
+
+        Ordered_at: {
             type: Sequelize.DATE,
             defaultValue: Sequelize.NOW
         }
     },
+
     { timestamps: false });
 
     Order.associate = models => {

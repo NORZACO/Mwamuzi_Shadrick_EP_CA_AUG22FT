@@ -24,118 +24,106 @@ class ItemServices {
     }
 
 
-    async getItemById(id) {
-        return await this.Item.findAll({
-            where: {
-                id: id
-            },
-            attributes: ['id', 'item_name', 'price', 'categoryId'],
-            include: {
-                model: this.Category,
-                attributes: ['id', 'name']
-            }
-        })
-    }
-
-    // GET ITEM BY PK ID and return all attribute
 
 
     async getItemByPK(itemPK) {
-        return await this.Item.findByPk(itemPK)
-    }
+        const item = await this.Item.findByPk(itemPK
+            , {
+                include: {
+                    model: this.Category,
+                    attributes: ['name']
+                }
+            }
 
-    
-
-
-    // https://sequelize.org/docs/v6/core-concepts/model-querying-finders/#findorcreate
-
-    // async createCategoryNameIf_idNotExist(categName, itemName, imgUrl, ItemPrice, ItemSku, stockQuantity) {
-    //     // find a category name or create a category name
-    //     const [ category, created] = await this.Category.findOrCreate({
-    //         where: { name: categName },
-    //         defaults: {
-    //             category: categName,
-    //         }
-    //     });
-    //     // create an item
-    //     const item = await this.Item.create({
-    //         category  : category.id, // this id was created from populatedf data from noroff api
-    //         name: itemName,
-    //         price: parseInt(ItemPrice),
-    //         sku: ItemSku,
-    //         stock_quantity: stockQuantity,
-    //         img_url: imgUrl,
-    //     });
-    //     return item;
-    // }
-
-    // async findOrCreateCategory(categoryName) {
-    //     // Try to find or create the category
-    //     const [categoryInstance, created] = await Category.findOrCreate({
-    //         where: { name: categoryName },
-    //         defaults: { name: categoryName }
-    //     });
-    //     return categoryInstance;
-    // }
-    async createItem(item_name, price, sku, stock_quantity, img_url, CategoryId) {
-        const Item = await this.Item.create({
-                item_name, price, 
-                sku, stock_quantity, 
-                img_url, CategoryId
-            });
-        return Item;
-    }
-
-
-    // find by cat ny and return attribute id
-    async findCategoryById(category_id) {
-        const category = await this.Category.findOne({
-            where: {
-                id: category_id
-            },
-            attributes: ['id']
-        });
-        return await category?.id;
-    }
-
-
-
-    // find or create category name and return id | NOT IN USED
-    async findOrCreateCategoryName(categoryName) {
-        const [categoryInstance, created] = await this.Category.findOrCreate({
-            where: { name: categoryName },
-            defaults: { name: categoryName }
-        });
-        if (created) {
-            // save
-            await categoryInstance.save();
-            console.log('Category id have been found and saved');
-            return categoryInstance.id;
+        )
+        if (!item) {
+            throw new Error(`Item with id: ${itemPK} not found`)
         }
-        return categoryInstance.id;
+        return item
     }
 
-
-    // check item by sku, item_name, img_url and return sku, item_name, img_url
-    async checkItemBySkuAndItemNameAndImgUrl(itemSku, itemName, imgUrl) {
-        const item = await this.Item.findOne({
-            where: {
-                sku: itemSku,
-                item_name: itemName,
-                img_url: imgUrl
-            },
-            attributes: ['sku', 'item_name', 'img_url', 'id']
-        });
-        return await item;
-    }
 
 
 
     // Check item by  item_name, price, sku, stock_quantity, img_url, CategoryId
-    async checkItemByAllAttributes(itemId, item_name, price, sku, stock_quantity, img_url, CategoryId) {
-        const item = await this.Item.findOne({
+    async createItem(Item_name, price, sku, stock_quantity, img_url, CategoryId) {
+        // const ItemSeack by itemId    OR item_name OR  price OR sku OR stock_quantity OR img_url OR CategoryId
+        const Item = await this.Item.findOne({
             where: {
-                id : itemId, 
+                [Op.or]: [
+                    // { id: itemId },
+                    { item_name: Item_name },
+                    // { price: price },
+                    { sku: sku },
+                    // { stock_quantity: stock_quantity },
+                    { img_url: img_url }
+                    // { CategoryId: CategoryId }
+                ]
+            }
+        });
+
+        if (Item) {
+            throw new Error(
+                `Item with item_name: ${Item_name} or sku ${sku} or img_url ${img_url} already exist`
+            );
+        }
+
+        // check CategoryId if exist
+        const category = await this.Category.findOne({
+            where: {
+                id: CategoryId
+            }
+        });
+        if (!category) {
+            throw new Error(
+                `Category with id: ${CategoryId} does not exist`
+            );
+        }
+
+        const NewItem = await this.Item.create(
+            { item_name: Item_name, price: price, sku: sku, stock_quantity: stock_quantity, img_url: img_url, CategoryId: CategoryId });
+        // await t.commit();
+        return NewItem;
+    }
+
+
+
+
+
+    // UPDATE
+    async updateItem(itemId, item_name, price, sku, stock_quantity, img_url, CategoryId) {
+        // const ItemSeack by itemId    OR item_name OR  price OR sku OR stock_quantity OR img_url OR CategoryId
+        const Item = await this.Item.findByPk(itemId)
+        const cat = await this.Category.findByPk(CategoryId)
+        if (!cat) {
+            throw new Error(
+                `Category with id: ${CategoryId} does not exist`
+            );
+        }
+
+        if (!Item) {
+            throw new Error(
+                `Item with id: ${itemId} does not exist`
+            );
+        }
+        // check sku AND img_url AND item_name        
+        const itemExist = await this.Item.findOne({
+            where: {
+                sku: sku,
+                img_url: img_url,
+                item_name: item_name
+            }
+        });
+
+        if (itemExist) {
+            throw new Error(
+                `Item with sku: ${sku} or img_url: ${img_url} or item_name: ${item_name} already exist`
+            );
+        }
+        const t = await this.client.transaction();
+        try {
+
+            const item = await this.Item.update({
                 item_name: item_name,
                 price: price,
                 sku: sku,
@@ -143,91 +131,33 @@ class ItemServices {
                 img_url: img_url,
                 CategoryId: CategoryId
             },
-            // attribute itemId, item_name, price, sku, stock_quantity, img_url, CategoryId
-            attributes: ['id', 'item_name', 'price', 'sku', 'stock_quantity', 'img_url', 'CategoryId']
-        });
-        return await item;
+                { where: { id: itemId } }
+            );
+            await t.commit();
+            return item;
+        } catch (error) {
+            await t.rollback();
+            throw new Error(error);
+        }
     }
-    // add item to db
-
-
-
-
-
-    // UPDATE
-    async updateItem(id, item_name, price, sku, stock_quantity, img_url, CategoryId) {
-        const item = await this.Item.update({
-            item_name, price, sku, stock_quantity, img_url, CategoryId
-        }, {
-            where: { id: id }
-        });
-        return item;
-    }
-    // DELETE
 
 
 
 
 
 
-
-
-
-
-// delete
+    // delete
     async deleteItem(id) {
         const item = await this.Item.destroy({
             where: { id: id }
         });
         return item;
     }
-    // DELETE ALL
-    async deleteAllItems() {
-        const item = await this.Item.destroy({
-            where: {},
-            truncate: false
-        });
-        return item;
-    }
 
 
 
 
 
-
-
-
-
-
-    // check item by sku OR item_name
-    // async checkItemBySkuOrItemName(itemSku, itemName) {
-    //     const item = await this.Item.findOne({
-    //         where: {
-    //             [Op.or]: [
-    //                 { sku: itemSku },
-    //                 { item_name: itemName }
-    //             ]
-    //         }
-    //     });
-    //     return item;
-    // }
-
-
-
-    // async addItemToCategory(itemId, categoryId) {
-    //     const item = await this.Item.findByPk(itemId);
-    //     const category = await this.Category.findByPk(categoryId);
-    //     await item.setCategory(category);
-    //     return item;
-    // }
-
-
-    // async updateItem(id, item) {
-    //     const updatedItem = await this.Item.update(item, {
-    //         where: { id: id }
-    //     });
-    //     return updatedItem;
-    // }
 
 }
 module.exports = ItemServices;

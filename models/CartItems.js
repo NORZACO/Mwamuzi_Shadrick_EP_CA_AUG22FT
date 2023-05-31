@@ -3,7 +3,12 @@ module.exports = (sequelize, Sequelize) => {
         quantity: {
             type: Sequelize.INTEGER,
             defaultValue: 1
-        }
+        },
+
+        CartId : {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+        },
 
     }, { timestamps: false });
 

@@ -18,7 +18,7 @@ async function updateStock() {
                     price: item.price,
                     sku: item.sku,
                     stock_quantity: item.stock_quantity,
-                    // categoryId: item.category
+                    categoryId: null
                 },
                 
             });
