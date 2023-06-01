@@ -1,14 +1,22 @@
 module.exports = (sequelize, Sequelize) => {
     const Cart = sequelize.define('Cart', {
-        // total: {
-        //     type: Sequelize.FLOAT,
-        //     allowNull: false,
-        // },
+       
+        totalPrice: {
+            type: Sequelize.FLOAT,
+            allowNull: false,
+        },
+        
+        status: {
+            type: Sequelize.STRING,
+            allowNull: false,
+            defaultValue: 'active'
+        },
+
     });
 
     Cart.associate = models => {
-        Cart.belongsTo(models.User,    {  foreignKey : 'UserId'  });
-        Cart.hasMany(models.CartItem,   {  foreignKey : 'CartId'  });
+        Cart.belongsTo(models.User);
+        Cart.belongsToMany(models.Item, { through: models.CartItem });
     };
 
     return Cart;

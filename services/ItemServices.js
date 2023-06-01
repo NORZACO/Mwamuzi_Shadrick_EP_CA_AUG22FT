@@ -25,17 +25,13 @@ class ItemServices {
 
 
 
-
+// GET ITEM BY JWT USER ID
     async getItemByPK(itemPK) {
-        const item = await this.Item.findByPk(itemPK
-            , {
+        const item = await this.Item.findByPk(itemPK, {
                 include: {
                     model: this.Category,
                     attributes: ['name']
-                }
-            }
-
-        )
+                }})
         if (!item) {
             throw new Error(`Item with id: ${itemPK} not found`)
         }
@@ -45,7 +41,7 @@ class ItemServices {
 
 
 
-    // Check item by  item_name, price, sku, stock_quantity, img_url, CategoryId
+    // POST Check item by  item_name, price, sku, stock_quantity, img_url, CategoryId
     async createItem(Item_name, price, sku, stock_quantity, img_url, CategoryId) {
         // const ItemSeack by itemId    OR item_name OR  price OR sku OR stock_quantity OR img_url OR CategoryId
         const Item = await this.Item.findOne({
@@ -146,7 +142,7 @@ class ItemServices {
 
 
 
-    // delete
+    // POST DELETE
     async deleteItem(id) {
         const item = await this.Item.destroy({
             where: { id: id }

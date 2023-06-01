@@ -116,9 +116,9 @@ router.delete('/category/:id', authenticateToken, jsonParser, async function (re
     try {
         const category = await categoryService.deleteCategory(categoryId);
         if (!category) {
-            return res.status(400).jsend.fail({ 'result': 'Category with given id not found' });
+            return res.status(400).jsend.fail({ 'result': `Category with given ${categoryId} id not found` });
         }
-        return res.status(200).jsend.success({ 'result': category });
+        return res.status(200).jsend.success({ 'result': `Ca5tegory with the name ${category} have succefully deleted` });
     } catch (error) {
         return res.status(500).jsend.fail({ 'result': error.message });
     }

@@ -81,7 +81,7 @@ router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
         // calculate the stock
         // const calculate_stock = itemreTurnStock - itemQuantity;
         // create cart  ItemId, itemQuantity, itemSku 
-        const NewCart = await cartServices.addItemToCart_and_ToCartItem(UserId, ItemId, itemQuantity, itemSku);
+        const NewCart = await cartServices.addItemToCart_and_ToCartItem_ManagedTransactions(UserId, ItemId, itemQuantity, itemSku);
 
         return res.status(200).jsend.success({ "result": NewCart });
     } catch (error) {

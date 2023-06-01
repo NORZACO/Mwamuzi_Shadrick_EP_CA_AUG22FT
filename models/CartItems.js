@@ -5,10 +5,10 @@ module.exports = (sequelize, Sequelize) => {
             defaultValue: 1
         },
 
-        CartId : {
-            type: Sequelize.INTEGER,
-            allowNull: false,
-        },
+        // CartId : {
+        //     type: Sequelize.INTEGER,
+        //     allowNull: false,
+        // },
 
     }, { timestamps: false });
 

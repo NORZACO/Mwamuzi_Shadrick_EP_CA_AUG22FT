@@ -3,11 +3,12 @@ var jsend = require('jsend');
 const router = express.Router();
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
-const OrderService = require('../services/CartServices');
+const OrderService = require('../services/OrderServices');
 const db = require('../models');
 const orderService = new OrderService(db);
 router.use(jsend.middleware);
 const authenticateToken = require('../securedEndpoint');
+// const checkAdminAuth = require('../checkAdminAuth');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -21,15 +22,13 @@ require('dotenv').config();
 
 
 // createOrder
-router.post('/create-order', authenticateToken, jsonParser, async (req, res) => {
+router.get('/get_order', authenticateToken, jsonParser, async (req, res) => {
     const UserId = req.user.userId;
-    const missingFiels = [];
-    if (!UserId) missingFiels.push('UserId');
-    if (missingFiels.length) {
-        return res.status(400).jsend.fail({ "result": "missing fields", "fields": missingFiels });
+    if (!UserId) {
+        return res.status(401).jsend.fail({ "result": "missing fields" });
     }
     try {
-        const order = await orderService.createOrder(UserId);
+        const order = await orderService.getCartByUserId(UserId);
         return res.status(200).jsend.success({ "result": order });
     } catch (error) {
         return res.status(500).jsend.fail({ "result": error.message });

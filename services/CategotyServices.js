@@ -83,7 +83,7 @@ class CatergotyServices {
     async deleteCategory(id) {
         const category = await this.Category.findByPk(id)
         if (!category) {
-            throw new Error('Category with given id not found');
+            throw new Error(`Category with given ${id} id not found`);
         }
 
         // item count
@@ -93,7 +93,7 @@ class CatergotyServices {
             }
         });
         if (itemCount > 0) {
-            throw new Error('Category has items');
+            throw new Error('Category has items, thus cannot be deleted');
         }
         return category.destroy();
     }

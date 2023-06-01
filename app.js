@@ -32,6 +32,7 @@ const orderRouter = require('./routes/order');
 const { updateStock, createCategoryIfNotFind, updateItem } = require('./Utility/index');
 
 db.sequelize.sync({ force: false }).then(() => {
+  //logo
   console.log(`
   ------------------------------------------------------------------
   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
@@ -42,6 +43,12 @@ db.sequelize.sync({ force: false }).then(() => {
 // db.sequelize.sync({ force: true }).then(() => {
 //   console.log("Drop and re-sync db.");
 // }).then(() => {
+//   // logo
+//   console.log(`
+//   ------------------------------------------------------------------
+//   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
+//   ------------------------------------------------------------------
+//   `)
 //   createCategoryIfNotFind();
 //   updateStock()
 
