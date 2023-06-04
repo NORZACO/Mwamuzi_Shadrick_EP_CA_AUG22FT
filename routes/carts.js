@@ -92,9 +92,10 @@ router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
 
 
 //UPDATE  updateItemInCart_and_ToCartItem_ManagedTransactions
-router.put('/update-cart', authenticateToken, jsonParser, async (req, res) => {
+router.put('/update-cart/:ItemId', authenticateToken, jsonParser, async (req, res) => {
     const UserId = req.user.userId;
-    const { ItemId, itemQuantity, itemSku } = req.body;
+    const ItemId = req.params.ItemId;
+    const { itemQuantity, itemSku } = req.body;
     const missingFiels = [];
     if (!UserId) missingFiels.push('UserId');
     if (!ItemId) missingFiels.push('ItemId');

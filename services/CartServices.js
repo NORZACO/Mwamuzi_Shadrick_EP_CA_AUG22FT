@@ -157,6 +157,11 @@ class CatergotyServices {
             throw new Error(`Item with sku ${items_sku} does not exist`);
         }
 
+        // find cart item
+        const findCartItem = await this.CartItem.findOne({ where: { CartId: (await this.Cart.findOne({ where: { UserId: jwt_user_id } })).id, ItemId: item_id } });
+        if (!findCartItem) {
+            throw new Error(`CartItem with CartId ${(await this.Cart.findOne({ where: { UserId: jwt_user_id } })).id} and ItemId ${item_id} does not exist`);
+        }
 
         // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
         if (findAndChoose.stock_quantity < quantity) {
@@ -171,27 +176,34 @@ class CatergotyServices {
                 const findCartItem = await this.CartItem.findOne({ where: { CartId: findCart.id, ItemId: item_id } });
                 // if cartItem exists
                 if (findCartItem) {
-                    // update cartItem quantity
+
+                    // check if there is enough stock_quantity
+                    if (findAndChoose.stock_quantity < quantity) {
+                        throw new Error(`There is not enough stock_quantity for item with id ${item_id}`);
+                    }
+
+                    // update cartItem quantity in cartItem where item_sku
                     await this.CartItem.update({ quantity: quantity }, { where: { CartId: findCart.id, ItemId: item_id } });
-                    // update cart totalPrice
-                    await this.Cart.update({ totalPrice: findCart.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
+
+                    const getTotalPriceInCart = await this.Cart.findOne({ where: { UserId: jwt_user_id } });
+                   
+                    const test = getTotalPriceInCart.totalPrice + (findItemBySku.price * quantity) - (findItemBySku.price * findCartItem.quantity);
+                    // quantity * price
+                    // const getQuantityInCartItem = (findCartItem.quantity * findItemBySku.price) + getTotalPriceInCart.totalPrice
+
+                    await this.Cart.update({ totalPrice: test }, { where: { UserId: jwt_user_id } });
                     // saved
                     await t.commit();
                     return await this.Cart.findOne({ where: { UserId: jwt_user_id } });
                 }
-                // error
-                throw new Error(`Cart with UserId ${jwt_user_id} does not exist`);
             }
-            // error
-            throw new Error(`Cart with UserId ${jwt_user_id} does not exist`);
         }
-
         catch (err) {
             await t.rollback();
             throw err;
         }
-
     }
+
 
 }
 
