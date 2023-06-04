@@ -17,18 +17,13 @@ class CatergotyServices {
 
     // GET ALL CART CartServices
     async getAllCarts() {
-        const carts = await this.Cart.findAll(
+        return await this.Cart.findAll(
         );
-        return carts;
     }
 
 
-    // Cart endpointsGET /cart This endpoint should be accessible when a Registered User has logged in. 
-    // This endpoint should only return the cart for the logged-in user. 
-    // The user information should be extracted from the JWT. No user information should be sent with the API request.
-
     async getCartByUserId(userId) {
-        const cart = await this.Cart.findAll({
+        return await this.Cart.findAll({
             where: { userId: userId },
             include: [
                 {
@@ -42,571 +37,163 @@ class CatergotyServices {
                 }
             ]
         });
-        return cart;
-    }
-
-
-
-    // CREATE carts with id, createdAt, updatedAt, UserId and cartitems quantity, CartId, ItemId
-    async addItemToCart_and_ToCartItem(jwt_user_id, item_id, quantity, items_sku) {
-        // check if item_id exist   
-        const t = await this.client.transaction();
-        try {
-
-            // find item with sku and id
-            const item = await this.Item.findOne({ where: { sku: items_sku, id: item_id } });
-            if (!item) {
-                throw new Error('Item with a given id does not exist');
-            }
-
-            // check user by jwt_user_id
-            const user = await this.User.findOne({ where: { id: jwt_user_id } });
-            if (!user) {
-                throw new Error('User with a given id does not exist');
-            }
-
-            // check cart with id, jwt_user_id include  i Items with sku
-            const findCart_with_JWTid_and_Itemsku = await this.Cart.findAll({
-                where:
-                {
-                    UserId: jwt_user_id
-                    // , id: cart_id
-                },
-                include: [{
-                    model: this.Item,
-                    where: { sku: items_sku }
-                }]
-            });
-
-            // check
-            if (findCart_with_JWTid_and_Itemsku.length > 0) {
-                // update cartitem quantity
-                const cartitem = await this.CartItem.findOne({ where: { ItemId: item_id } });
-                if (!cartitem) {
-                    throw new Error('Cartitem with a given id does not exist');
-                }
-                // update  quantity + newquantity
-                const newQuantity = cartitem.quantity + quantity;
-                // check if there is enough stock
-                if (newQuantity > item.stock_quantity) {
-                    throw new Error('There is not enough stock');
-                }
-                await this.CartItem.update({ quantity: newQuantity }, { where: { ItemId: item_id } });
-                // save
-                await cartitem.save();
-                // update items stock_quantity
-                //logo
-                console.log(`
-                ---------------------------------
-                |   ITEMS HAVE BEEN ADDED     |
-                ---------------------------------
-                `)
-                await t.commit();
-                return cartitem
-            }
-            else {
-                // create cart
-                const cartDoesntExist = await this.Cart.create({ createdAt: new Date(), updatedAt: new Date(), UserId: jwt_user_id });
-                // save
-                await cartDoesntExist.save();
-                console.log('THE CART HAVE BEEN SUCCESSFULLY CREATE IN THE DATABASE');
-                // check if user have a cartItem
-                const cartitem = await this.CartItem.findOne({ where: { id: cartDoesntExist?.id, UserId: jwt_user_id } });
-                if (cartitem) {
-                    throw new Error(`Login user already have a Cartiten with the id already exist`);
-                }
-                //if login user have a cartItem, add tp the same cartItem
-                // update  quantity + newquantity
-
-                await this.CartItem.create({ quantity: quantity, CartId: cartDoesntExist.id, ItemId: item_id });
-                await t.commit();
-                return cartDoesntExist
-            }
-            // commit
-        } catch (error) {
-            // Rollback transaction if any errors were encountered
-            await t.rollback();
-            throw new Error(error.message);
-        }
     }
 
 
 
 
 
-    // addItemToCart_and_ToCartItem Managed transactions
-    // CREATE carts with id, createdAt, updatedAt, UserId and cartitems quantity, CartId, ItemId
     async addItemToCart_and_ToCartItem_ManagedTransactions(jwt_user_id, item_id, quantity, items_sku) {
-        // check if item_id exist   
+        // start transaction t
         const t = await this.client.transaction();
+
+        // search user by jwt_user_id and throw error if not found
+        const findLoginUser = await this.User.findOne({ where: { id: jwt_user_id } });
+        if (!findLoginUser) {
+            throw new Error(`User with id ${jwt_user_id} does not exist`);
+        }
+
+        // search item_id and throw error if not found
+        const findAndChoose = await this.Item.findOne({ where: { id: item_id } });
+        if (!findAndChoose) {
+            throw new Error(`Item with id ${item_id} does not exist`);
+        }
+
+        // search items_sku and throw error if not found
+        const findItemBySku = await this.Item.findOne({ where: { sku: items_sku } });
+        if (!findItemBySku) {
+            throw new Error(`Item with sku ${items_sku} does not exist`);
+        }
+
+        /*
+        // search cart by jwt_user_id
+        const findCartByUserId = await this.Cart.findOne({ where: { UserId: jwt_user_id } });
+        if (!findCartByUserId) {
+            throw new Error(`Cart with UserId ${jwt_user_id} does not exist`);
+        }
+        */
+
+
+
         try {
 
-            // find item with sku and id
-            const item = await this.Item.findOne({ where: { sku: items_sku, id: item_id } });
-            if (!item) {
-                throw new Error('Item with a given id does not exist');
+            // find cart where UserId : jwt_user_id
+            const findCart = await this.Cart.findOne({ where: { UserId: jwt_user_id } });
+            if (findCart) {
+                // find cartItem where CartId and ItemId
+                const findCartItem = await this.CartItem.findOne({ where: { CartId: findCart.id, ItemId: item_id } });
+
+                if (findCartItem) {
+                    // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
+                    if (findAndChoose.stock_quantity < findCartItem.quantity + quantity) {
+                        throw new Error(`1 There is not enough stock_quantity for item with id ${item_id}`);
+                    }
+                    // update cartItem quantity
+                    await this.CartItem.update({ quantity: findCartItem.quantity + quantity }, {
+                        where: { CartId: findCart.id, ItemId: item_id }
+                    });
+
+                    // update cart totalPrice
+                    await this.Cart.update({ totalPrice: findCart.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
+                    // saved
+                    await t.commit();
+                    return await this.Cart.findOne({ where: { UserId: jwt_user_id } });
+                }
+
+                // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
+                if (findAndChoose.stock_quantity < quantity) {
+                    throw new Error(` 2 There is not enough stock_quantity for item with id ${item_id}`);
+                }
+
+
+                // create cartItem
+                await this.CartItem.create({ CartId: findCart.id, ItemId: item_id, quantity: quantity });
+                // update cart totalPrice
+                await this.Cart.update({ totalPrice: findCart.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
+                // saved
+                await t.commit();
+                return await this.Cart.findOne({ where: { UserId: jwt_user_id } });
             }
 
-            // check user by jwt_user_id
-            const user = await this.User.findOne({ where: { id: jwt_user_id } });
-            if (!user) {
-                throw new Error('User with a given id does not exist');
+            // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
+            if (findAndChoose.stock_quantity < quantity) {
+                throw new Error(`3 There is not enough stock_quantity for item with id ${item_id}`);
             }
 
-            // check cart with id, jwt_user_id include  i Items with sku
-            const findCart_with_JWTid_and_Itemsku = await this.Cart.findAll({
-                where:
-                {
-                    UserId: jwt_user_id
-                    // , id: cart_id
-                },
-                include: [{
-                    model: this.Item,
-                    where: { sku: items_sku }
-                }]
-            });
-            // find if user have aleardy have a cart
-            const cartitemExist = await this.Cart.findOne({ where: { /*id: cartDoesntExist?.id,*/ UserId: jwt_user_id } });
-            // check
-            if (findCart_with_JWTid_and_Itemsku.length > 0) {
-                // update cartitem quantity
-                const cartitem = await this.CartItem.findOne({ where: { ItemId: item_id } });
-                if (!cartitem) {
-                    throw new Error('Cartitem with a given id does not exist');
-                }
-                // update  quantity + newquantity
-                const newQuantity = cartitem.quantity + quantity;
-                // check if there is enough stock
-                if (newQuantity > item.stock_quantity) {
-                    throw new Error('There is not enough stock');
-                }
-                await this.CartItem.update({ quantity: newQuantity }, { where: { ItemId: item_id } });
-                // save
-                await cartitem.save();
-                // update items stock_quantity
-                //logo
-                console.log(`
-                ---------------------------------
-                |   ITEMS HAVE BEEN ADDED     |
-                ---------------------------------
-                `)
-                await t.commit();
-                return cartitem
-            } else if (cartitemExist) {
-                // create CartItem
-                const cartitem = await this.CartItem.create({ quantity: quantity, CartId: cartitemExist.id, ItemId: item_id });
-                // save
-                await cartitem.save();
-                // update items stock_quantity
-                //logo
-                console.log(`
-                ---------------------------------
-                |   ITEMS HAVE BEEN ADDED     |
-                ---------------------------------
-                `)
-                await t.commit();
-                return cartitem
-            }
-            else {
-                // create cart id, totalPrice, status, createdAt, updatedAt, UserId
-                // const cart = await this.Cart.create({ UserId: jwt_user_id, totalPrice: item.price * quantity });
-                // const cartDoesntExist = await this.Cart.create({ createdAt: new Date(), updatedAt: new Date(), UserId: jwt_user_id });
-                const cartDoesntExist = await this.Cart.create({totalPrice : quantity , status : 'active', createdAt: new Date(), updatedAt : new Date(), UserId : jwt_user_id });
-                // save
-                await cartDoesntExist.save();
-                console.log('THE CART HAVE BEEN SUCCESSFULLY CREATE IN THE DATABASE');
-                // check if user have a cartItem
-                // const cartitem = await this.CartItem.findOne({ where: { id: cartDoesntExist?.id, UserId: jwt_user_id } });
-                // if (cartitem) {
-                //     throw new Error(`Login user already have a Cartiten with the id already exist`);
-                // }
-                //if login user have a cartItem, add tp the same cartItem
-                // update  quantity + newquantity
-                const newQuantity = quantity;
-                // check if there is enough stock
-                if (newQuantity > item.stock_quantity) {
-                    throw new Error('There is not enough stock');
-                }
-                await this.CartItem.create({ quantity: quantity, CartId: cartDoesntExist.id, ItemId: item_id });
-                await t.commit();
-                return cartDoesntExist
-            }
-
-            // commit
-        } catch (error) {
-            // Rollback transaction if any errors were encountered
+            // create cart
+            const newCart = await this.Cart.create({ UserId: jwt_user_id, totalPrice: (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity });
+            // create cartItem
+            await this.CartItem.create({ CartId: newCart.id, ItemId: item_id, quantity: quantity });
+            // saved
+            await t.commit();
+            return await this.Cart.findOne({ where: { UserId: jwt_user_id } });
+        }
+        catch (err) {
             await t.rollback();
-            throw new Error(error.message);
+            throw err;
         }
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Create Orders and Orderstimes with quantity, price, ItemId, OrderId
-    async createOrder(jwt_user_id, item_id, quantity, items_sku) {
-        // check if item_id exist
+    async updateItemInCart_and_ToCartItem_ManagedTransactions(jwt_user_id, item_id, quantity, items_sku) {
+        // start transaction t
         const t = await this.client.transaction();
+
+        // search user by jwt_user_id and throw error if not found
+        const findLoginUser = await this.User.findOne({ where: { id: jwt_user_id } });
+        if (!findLoginUser) {
+            throw new Error(`User with id ${jwt_user_id} does not exist`);
+        }
+
+        // search item_id and throw error if not found
+        const findAndChoose = await this.Item.findOne({ where: { id: item_id } });
+        if (!findAndChoose) {
+            throw new Error(`Item with id ${item_id} does not exist`);
+        }
+
+        // search items_sku and throw error if not found
+        const findItemBySku = await this.Item.findOne({ where: { sku: items_sku } });
+        if (!findItemBySku) {
+            throw new Error(`Item with sku ${items_sku} does not exist`);
+        }
+
+
+        // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
+        if (findAndChoose.stock_quantity < quantity) {
+            throw new Error(`There is not enough stock_quantity for item with id ${item_id}`);
+        }
+
         try {
-            // find item with sku and id
-            const item = await this.Item.findOne({ where: { sku: items_sku, id: item_id } });
-            if (!item) {
-                throw new Error('Item with a given id does not exist');
-            }
-            // find cart item with item_id
-            const cartitem = await this.CartItem.findOne({ where: { ItemId: item_id } });
-            if (!cartitem) {
-                throw new Error('Cartitem with a given id does not exist');
-            }
-            // check user by jwt_user_id
-            const user = await this.User.findOne({ where: { id: jwt_user_id } });
-            if (!user) {
-                throw new Error('User with a given id does not exist');
-            }
-            // check cart with id, jwt_user_id include  i Items with sku
-            const findCart_with_JWTid_and_Itemsku = await this.Cart.findAll({
-                where:
-                {
-                    UserId: jwt_user_id
-                    // , id: cart_id
-                },
-                include: [{
-                    model: this.Item,
-                    where: { sku: items_sku }
-                }]
-            });
-            // check
-            if (findCart_with_JWTid_and_Itemsku.length > 0) {
-                // update cartitem quantity
-                const cartitem = await this.CartItem.findOne({ where: { ItemId: item_id } });
-                if (!cartitem) {
-                    throw new Error('Cartitem with a given id does not exist');
+            // find cart where UserId : jwt_user_id
+            const findCart = await this.Cart.findOne({ where: { UserId: jwt_user_id } });
+            if (findCart) {
+                // find cartItem where CartId and ItemId
+                const findCartItem = await this.CartItem.findOne({ where: { CartId: findCart.id, ItemId: item_id } });
+                if (findCartItem) {
+                    // update cartItem quantity
+                    await this.CartItem.update({ quantity: quantity }, {
+                        where: { CartId: findCart.id, ItemId: item_id }
+                    });
+
+                    // update cart totalPrice
+                    await this.Cart.update({ totalPrice: findCart.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
+                    // saved
+                    await t.commit();
+                    return await this.Cart.findOne({ where: { UserId: jwt_user_id } });
                 }
-                // update  quantity + newquantity
-                const newQuantity = cartitem.quantity + quantity;
-                // check if there is enough stock
-                if (newQuantity > item.stock_quantity) {
-                    throw new Error('There is not enough stock');
+                // if cartItem not found
+                throw new Error(`CartItem with CartId ${findCart.id} and ItemId ${item_id} does not exist`);
                 }
-                await this.CartItem.update({ quantity: newQuantity }, { where: { ItemId: item_id } });
-                // save
-                await cartitem.save();
-                // update items stock_quantity
-                //logo
-                console.log(`
-                ---------------------------------
-                |   ITEMS HAVE BEEN UPDATED     |
-                ---------------------------------
-                `)
-                await t.commit();
-                return cartitem
-            }
-            else {
-                // create cart
-                const cartDoesntExist = await this.Cart.create({ createdAt: new Date(), updatedAt: new Date(), UserId: jwt_user_id });
-                console.log('THE CART HAVE BEEN SUCCESSFULLY CREATE IN THE DATABASE');
-                // create cartitems
-                await this.CartItem.create({ quantity: quantity, CartId: cartDoesntExist?.id, ItemId: item_id });
-                await t.commit();
-                return cartDoesntExist
-            }
-            // commit
-        } catch (error) {
-            // Rollback transaction if any errors were encountered
-            await t.rollback();
-            throw new Error(error.message);
-        }
-    }
+            // if cart not found
+            throw new Error(`Cart with UserId ${jwt_user_id} does not exist`);
+            
 
 
 
 
-
-    /*
-    
-    
-        //check if the cart with same jwt_user_id exist
-        async checkCartbyJWT(jwt_user_id) {
-            const cart = await this.Cart.findOne({ where: { UserId: jwt_user_id } });
-            if (!cart) {
-                throw new Error('Cart with a given id not found');
-            }
-            return cart
-        }
-    
-    
-    
-        // check if the cartitem with same cartId and item_id exist
-        async checkCartitem(cartId, item_id) {
-            const cartitem = await this.CartItem.findOne({ where: { CartId: cartId, ItemId: item_id } });
-            if (!cartitem) {
-                throw new Error('Cartitem with a given id not found');
-            }
-            return cartitem
-        }
-    
-        // getItemBySku
-        async getItemBySku(sku) {
-            const item = await this.Item.findOne({ where: { sku: sku } });
-            if (!item) {
-                throw new Error('Item with a given id not found');
-            }
-            return item
-        }
-    
-    
-        // check cart by sku and jwt_user_id
-        async getCartItemBySku(sku, jwt_user_id) {
-            const cart = await this.Cart.findOne({
-                where: { UserId: jwt_user_id },
-                include: [
-                    {
-                        model: this.Item,
-                        attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
-                        where: { sku: sku },
-                        include: [{
-                            model: this.Category,
-                            attributes: ['name']
-                        }
-                        ]
-                    }
-                ]
-            });
-            // if (!cart) {
-            //     throw new Error('Cart with a given id not found');
-            // }
-            return cart
-        }
-    
-    
-    
-    
-    
-    
-        // async createCartAndCartiten2
-        async reTurnStock(item_id) {
-            // check if item_id exist
-            const item = await this.Item.findOne({ where: { id: item_id } });
-            if (!item || item === null || item > 0) {
-                throw new Error('Item with a given id not found');
-            }
-            // return stock
-            const stock = item.stock_quantity;
-            return stock
-        }
-    
-    
-    
-    
-    
-        // add item to cart
-        async createCart(jwt_user_id, quantity, item_id ) {
-            const t = await this.client.transaction();
-    
-            // create a cart with a login user
-            try {
-                // check jwt_user_id
-                const user = await this.User.findOne({ where: { id: jwt_user_id } });
-                if (!user) {
-                    throw new Error('User with a given id not found');
-                }
-                // check item_id and sku
-    
-                const item = await this.Item.findOne({ where: { id: item_id } });
-                if (!item) {
-                    throw new Error('Item with a given id not found');
-                }
-    
-                // call reTurnStock
-                const stock = await this.reTurnStock(item_id);
-                // calculate items remanaing in the stock
-                const itemsRemaining = stock - quantity
-                // check
-                if (itemsRemaining < 0) {
-                    throw new Error('Not enough items in stock');
-                }
-                console.log(`
-                -----------------------------------------------------------------------------------
-                | ITEMS :${itemsRemaining} | STOCK : ${stock} | QUANTITY : ${quantity}           |
-                -----------------------------------------------------------------------------------
-                `)
-    
-    
-                // create a cart
-                const cart = await this.Cart.create({ createdAt: new Date(), updatedAt: new Date(), UserId: jwt_user_id });
-                // create a cartitem
-                await this.CartItem.create({ quantity: quantity, CartId: cart?.id, ItemId: item_id });
-                // update items stock_quantity
-                // await this.Item.update({ stock_quantity: itemsRemaining }, { where: { id : item_id } });
-                // save
-                await t.commit();
-                return cart
-            } catch (error) {
-                await t.rollback();
-                throw error;
-            }
-        }
-    
-       
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        // UPDATE CARTITEM
-        async updateCartitem(cartId, item_id, quantity) {
-            // check if item_id exist
-            const item = await this.Item.findOne({ where: { id: item_id } });
-            if (!item) {
-                throw new Error('Item with a given id not found');
-            }
-            // check if cart_id exist
-            const cart = await this.Cart.findOne({ where: { id: cartId } });
-            if (!cart) {
-                throw new Error('Cart with a given id not found');
-            }
-            // calculate items remanaing in the stock
-            const itemsRemaining = item.stock_quantity - quantity
-            // update items stock_quantity
-            const updatedItem = await this.Item.update({ stock_quantity: itemsRemaining }, { where: { id: item_id } });
-            // save
-            await updatedItem.save();
-            // update cartitem
-            const updatedCartitem = await this.CartItem.update({ quantity: quantity }, { where: { CartId: cartId, ItemId: item_id } });
-            // save
-            await updatedCartitem.save();
-            return updatedCartitem;
-        }
-    
-    
-    
-    
-        // PUT /cart_item/:id  UserId ItemId || update attribute quantity || INCLUDE ITEM
-        async updateCartitem(cartId, UserId, quantity) {
-            // check if cart_id exist
-            const cart = await this.Cart.findOne({
-                where: {
-                    id: cartId,
-                    UserId: UserId
-                }
-            });
-            if (!cart) {
-                throw new Error('Cart with a given id not found');
-            }
-            // update cartitem
-            const updatedCartitem = await this.CartItem.update(
-                { quantity: quantity },
-                {
-                    where: { CartId: cartId },
-                    include: [{
-                        model: this.Item,
-                        attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
-                        include: [{
-                            model: this.Category,
-                            attributes: ['name']
-                        }
-                        ]
-                    }
-                    ]
-                });
-            // save
-            await updatedCartitem.save();
-            return updatedCartitem;
-        }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-        // create orders: id, order_date, UserId amd cartitems : quantity, price, ItemId, OrderId
-        async createOrderAndOrderItem(jwt_user_id, cartId) {
-            // check if item_id exist   
-            const t = await this.client.transaction();
-            try {
-                // create order
-                const order = await this.Order.create({
-                    order_date: new Date(),
-                    UserId: jwt_user_id
-                });
-    
-                // get cartitems
-                const cartitems = await this.CartItem.findAll({ where: { CartId: cartId } });
-    
-                // create orderitems
-                for (let i = 0; i < cartitems.length; i++) {
-                    await this.OrderItem.create(
-                        {
-                            quantity: cartitems[i].quantity,
-                            price: cartitems[i].Item.price,
-                            ItemId: cartitems[i].ItemId,
-                            OrderId: order.id
-                        }
-                    );
-                }
-                await t.commit();
-                return order.id;
-    
-            } catch (error) {
-                await t.rollback();
-                throw error;
-            }
-        }
-    
-    
-     */
 
 
 
 }
 
-
-
-
-//TODO: Creat user service
 module.exports = CatergotyServices;
-
-
-
-
-
-
-

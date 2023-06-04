@@ -91,12 +91,49 @@ router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
 
 
 
+//UPDATE  updateItemInCart_and_ToCartItem_ManagedTransactions
+router.put('/update-cart', authenticateToken, jsonParser, async (req, res) => {
+    const UserId = req.user.userId;
+    const { ItemId, itemQuantity, itemSku } = req.body;
+    const missingFiels = [];
+    if (!UserId) missingFiels.push('UserId');
+    if (!ItemId) missingFiels.push('ItemId');
+    if (!itemQuantity) missingFiels.push('itemQuantity');
+    if (!itemSku) missingFiels.push('itemSku');
+    if (missingFiels.length) {
+        return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
+    }
+    // rejex all, only number
+    const regexNumber = /^[0-9]*$/;
+    if (!regexNumber.test(itemQuantity)) {
+        return res.status(400).jsend.fail({ "result": "itemQuantity must be a number" });
+    }
+    // itemid
+    const regexItemId = /^[0-9]*$/;
+    if (!regexItemId.test(ItemId)) {
+        return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
+    }
+    // UserId
+    const regexUserId = /^[0-9]*$/;
+    if (!regexUserId.test(UserId)) {
+        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
+    }
+    try {
+        const NewCart = await cartServices.updateItemInCart_and_ToCartItem_ManagedTransactions(UserId, ItemId, itemQuantity, itemSku);
+        console.log(NewCart);
+        return res.status(200).jsend.success({ "result": NewCart });
+    } catch (error) {
+        return res.status(500).jsend.fail({ "result": error.message });
+    }
+});
 
 
 
 
 
 
+
+/*
 // createCartAndCartitem JWTuserId, ItemId, ItemQuantity
 router.post('/add-to-cartX', authenticateToken, jsonParser, async (req, res) => {
     const UserId = req.user.userId;
@@ -145,7 +182,7 @@ router.post('/add-to-cartX', authenticateToken, jsonParser, async (req, res) => 
         // calculate the stock
         // const calculate_stock = itemreTurnStock - itemQuantity;
         // create cart
-        const NewCart = await cartServices.createCart(UserId, itemQuantity, ItemId/*, calculate_stock*/);
+        const NewCart = await cartServices.createCart(UserId, itemQuantity, ItemId/*, calculate_stock/);
 
         return res.status(200).jsend.success({ "result": NewCart });
     } catch (error) {
@@ -153,7 +190,7 @@ router.post('/add-to-cartX', authenticateToken, jsonParser, async (req, res) => 
     }
 });
 
-
+*/
 
 
 
@@ -251,7 +288,7 @@ router.put('/cart_item/:id', authenticateToken, jsonParser, async (req, res) => 
     if (!regexCartId.test(cartId)) {
         return res.status(400).jsend.fail({ "result": "cartId must be a number" });
     }
-    
+
     try {
         const updateCartItems_id = await cartServices.updateCartitemQuantity(cartId, item_id, quantity)
         return res.status(200).jsend.success({ "result": updateCartItems_id });
