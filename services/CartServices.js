@@ -169,30 +169,29 @@ class CatergotyServices {
             if (findCart) {
                 // find cartItem where CartId and ItemId
                 const findCartItem = await this.CartItem.findOne({ where: { CartId: findCart.id, ItemId: item_id } });
+                // if cartItem exists
                 if (findCartItem) {
                     // update cartItem quantity
-                    await this.CartItem.update({ quantity: quantity }, {
-                        where: { CartId: findCart.id, ItemId: item_id }
-                    });
-
+                    await this.CartItem.update({ quantity: quantity }, { where: { CartId: findCart.id, ItemId: item_id } });
                     // update cart totalPrice
                     await this.Cart.update({ totalPrice: findCart.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
                     // saved
                     await t.commit();
                     return await this.Cart.findOne({ where: { UserId: jwt_user_id } });
                 }
-                // if cartItem not found
-                throw new Error(`CartItem with CartId ${findCart.id} and ItemId ${item_id} does not exist`);
-                }
-            // if cart not found
+                // error
+                throw new Error(`Cart with UserId ${jwt_user_id} does not exist`);
+            }
+            // error
             throw new Error(`Cart with UserId ${jwt_user_id} does not exist`);
-            
+        }
 
+        catch (err) {
+            await t.rollback();
+            throw err;
+        }
 
-
-
-
-
+    }
 
 }
 
