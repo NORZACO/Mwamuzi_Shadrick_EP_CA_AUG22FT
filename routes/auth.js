@@ -19,14 +19,28 @@ const User = require('../models/User');
 
 
 router.post('/signup', jsonParser, async function (req, res, next) {
-   const { username, email, roleId, password } = req.body;
+   const { firstName, lastName, username, email, roleId, password } = req.body;
    const missingField = [];
+   if (!firstName) missingField.push('firstName');
+   if (!lastName) missingField.push('lastName');
    if (!username) missingField.push('username');
    if (!email) missingField.push('email');
    if (!roleId) missingField.push('roleId');
    if (!password) missingField.push('password');
    if (missingField.length > 0) {
       return res.status(400).jsend.fail({ 'result': 'Missing fields', 'fields': missingField });
+   }
+
+   // regex firstName
+   const regexfirstName = /^[a-zA-Z0-9]{3,30}$/;
+   if (!regexfirstName.test(firstName)) {
+      return res.status(400).jsend.fail({ 'result': 'Username must be between 3 and 30 characters long and contain only letters and numbers' });
+   }
+
+   // regex lastName
+   const regexlastName = /^[a-zA-Z0-9]{3,30}$/;
+   if (!regexlastName.test(lastName)) {
+      return res.status(400).jsend.fail({ 'result': 'Username must be between 3 and 30 characters long and contain only letters and numbers' });
    }
 
    // regex username
@@ -46,8 +60,8 @@ router.post('/signup', jsonParser, async function (req, res, next) {
       return res.status(400).jsend.fail({ 'result': 'Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character' });
    }
    try {
-
-      await userService.createUser(username, email, password, roleId);
+  
+      await userService.createUser(firstName, lastName, username, email, password, roleId);
       res.status(200).jsend.success(
          {
             "result": "You are new been registered ",

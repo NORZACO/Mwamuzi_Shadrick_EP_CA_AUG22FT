@@ -14,22 +14,26 @@ require('dotenv').config();
 
 
 
-
-// GET ALL CARTS
-router.get('/allcarts', authenticateToken, async (req, res) => {
+// getAllCarts access only by Admin || GET /allcarts 
+router.get('/allcarts', authenticateToken, jsonParser, async (req, res) => {
+    const userId = req.user.userId;
+    if (!userId) {
+        return res.status(400).jsend.fail({ "result": "userId is required" });
+    }
     try {
         const carts = await cartServices.getAllCarts();
-        res.jsend.success({
-            "result": carts
-        });
+        if (!carts) {
+            return res.status(400).jsend.fail({ "result": "Carts not found" });
+        }
+        return res.status(200).jsend.success({ "result": carts });
     } catch (error) {
-        res.jsend.fail({ "result": error.message });
+        return res.status(500).jsend.fail({ "result": error.message });
     }
 });
 
 
 
-// GET MY CART BY ID
+// GET MY CART BY ID || Cart endpointsGET /cart 
 router.get('/cart', authenticateToken, jsonParser, async (req, res) => {
     const cartId = req.user.userId;
     if (!cartId) {
@@ -48,7 +52,7 @@ router.get('/cart', authenticateToken, jsonParser, async (req, res) => {
 
 
 
-// createCartAndCartitem JWTuserId, ItemId, ItemQuantity
+// createCartAndCartitem JWTuserId, ItemId, ItemQuantity || POST /cart_item
 router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
     const UserId = req.user.userId;
     const { ItemId, itemQuantity, itemSku } = req.body;
@@ -91,7 +95,9 @@ router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
 
 
 
-//UPDATE  updateItemInCart_and_ToCartItem_ManagedTransactions
+
+
+//UPDATE  updateItemInCart_and_ToCartItem_ManagedTransactions || PUT /cart_item/:id 
 router.put('/update-cart/:ItemId', authenticateToken, jsonParser, async (req, res) => {
     const UserId = req.user.userId;
     const ItemId = req.params.ItemId;
@@ -127,6 +133,37 @@ router.put('/update-cart/:ItemId', authenticateToken, jsonParser, async (req, re
         return res.status(500).jsend.fail({ "result": error.message });
     }
 });
+
+
+
+// DELETE deleteItemInCart_and_ToCartItem_ManagedTransactions || DELETE /cart_item/:id 
+router.delete('/delete-cart_item/:ItemId', authenticateToken, jsonParser, async (req, res) => {
+    const UserId = req.user.userId;
+    const ItemId = req.params.ItemId;
+    const missingFiels = [];
+    if (!UserId) missingFiels.push('UserId');
+    if (!ItemId) missingFiels.push('ItemId');
+    if (missingFiels.length) {
+        return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
+    }
+    // itemid
+    const regexItemId = /^[0-9]*$/;
+    if (!regexItemId.test(ItemId)) {
+        return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
+    }
+    // UserId
+    const regexUserId = /^[0-9]*$/;
+    if (!regexUserId.test(UserId)) {
+        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
+    }
+    try {
+        const NewCart = await cartServices.deleteItemInCart_and_ToCartItem_ManagedTransactions(UserId, ItemId);
+        return res.status(200).jsend.success({ "result": NewCart });
+    } catch (error) {
+        return res.status(500).jsend.fail({ "result": error.message });
+    }
+});
+
 
 
 
@@ -196,73 +233,6 @@ router.post('/add-to-cartX', authenticateToken, jsonParser, async (req, res) => 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // PUT /cart_item/:id   updateCartitem(cartId, item_id, quantity)
 router.put('/cart_item/:id', authenticateToken, jsonParser, async (req, res) => {
     const cartId = req.params.id;
@@ -300,6 +270,34 @@ router.put('/cart_item/:id', authenticateToken, jsonParser, async (req, res) => 
 
 
 
+
+// deleteMyCart_ManagedTransactions || DELETE /cart/:id,  delete all items from the cart of the specific user
+router.delete('/cart/:id', authenticateToken, jsonParser, async (req, res) => {
+    const UserId = req.user.userId;
+    const cartId = req.params.id;
+    const missingFiels = [];
+    if (!UserId) missingFiels.push('UserId');
+    if (!cartId) missingFiels.push('cartId');
+    if (missingFiels.length) {
+        return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
+    }
+    // cartId
+    const regexCartId = /^[0-9]*$/;
+    if (!regexCartId.test(cartId)) {
+        return res.status(400).jsend.fail({ "result": "cartId must be a number" });
+    }
+    // UserId
+    const regexUserId = /^[0-9]*$/;
+    if (!regexUserId.test(UserId)) {
+        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
+    }
+    try {
+        const deleteCart = await cartServices.deleteMyCart(cartId, UserId);
+        return res.status(200).jsend.success({ "result": deleteCart });
+    } catch (error) {
+        return res.status(500).jsend.fail({ "result": error.message });
+    }
+});
 
 // export
 module.exports = router;

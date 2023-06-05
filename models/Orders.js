@@ -1,14 +1,24 @@
 module.exports = (sequelize, Sequelize) => {
     const Order = sequelize.define('Order', {
         // status
-        status: {
+        orderStatus: {
             type: Sequelize.ENUM,
             values: ['pending', 'completed', 'cancelled'],
             defaultValue: 'pending'
         },
 
-        totalPrice : {
+        totalPrice: {
             type: Sequelize.FLOAT,
+            allowNull: false,
+        },
+
+        // discountCode : {
+        //     type: Sequelize.DataTypes.INTEGER,
+        //     allowNull: false,
+        // },
+
+        discountPercentage: {
+            type: Sequelize.DataTypes.INTEGER,
             allowNull: false,
         },
 
@@ -18,7 +28,7 @@ module.exports = (sequelize, Sequelize) => {
         }
     },
 
-    { timestamps: false });
+        { timestamps: false });
 
     Order.associate = models => {
         Order.belongsTo(models.User);
@@ -27,3 +37,4 @@ module.exports = (sequelize, Sequelize) => {
 
     return Order;
 };
+

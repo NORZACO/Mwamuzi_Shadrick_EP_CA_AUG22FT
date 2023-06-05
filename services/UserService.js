@@ -15,12 +15,25 @@ class UserService {
     }
 
     // INSERT INTO `stocksalesdb`.`users` (`id`, `username`, `email`, `encryptedPassword`, `salt`, `roleId`) VALUES (NULL, NULL, NULL, NULL, NULL, NULL);
-    async createUser(Username, Email, password, RoleId) {
+    async createUser(FirstName, LastName, Username, Email, password, RoleId) {
         // check if user with same username Exist
         const user = await this.User.findOne({ where: { username: Username } });
         if (user) {
             throw new Error('User with a given username already exist');
         }
+
+        // check if email is used by 4 people
+        const emailCount = await this.User.count({
+            where: {
+                email: Email
+            }
+        })
+
+        // already have 4 users with the same emial
+        if (emailCount > 3) {
+            throw new Error('Email cannot be used by more than 4 users');
+        }
+
         // check if user with same email Exist
         const useremail = await this.User.findOne({ where: { email: Email } });
         if (useremail) {
@@ -45,6 +58,8 @@ class UserService {
             const EncryptedPassword = await bcrypt.hash(password, santRount);
 
             const newUser = await this.User.create({
+                firstName: FirstName,
+                lastName: LastName,
                 username: Username,
                 email: Email,
                 encryptedPassword: EncryptedPassword,
