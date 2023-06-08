@@ -9,12 +9,17 @@ const itemsService = new ItemsService(db);
 router.use(jsend.middleware);
 const authenticateToken = require('../securedEndpoint');
 
+require('dotenv').config();
+
 
 
 // GET ALL ITEMS getAllItems
 router.get('/items', authenticateToken, async function (req, res, next) {
+    console.log('req', req.user);
+    const user_id = req.user.userId;
+    const role = req.user.role;
     try {
-        const items = await itemsService.getAllItems();
+        const items = await itemsService.getAllItemsByUser(role, user_id);
         res.status(200).jsend.success({ ' result': items });
     } catch (error) {
         res.status(500).jsend.fail({ 'result': error.message });
@@ -22,24 +27,16 @@ router.get('/items', authenticateToken, async function (req, res, next) {
 });
 
 
+
 // GET ITEM BY ID getItemById
 router.get('/item/:itemId', authenticateToken, jsonParser, async function (req, res, next) {
     const itemId = req.params.itemId;
+    console.log('req', req.user);
+    const user_id = req.user.userId;
+    const role = req.user.role;
     try {
-        if (!itemId) {
-            res.status(400).jsend.fail({ 'result': 'Item id is required' });
-        }
-
-        const itempk = await itemsService.getItemByPK(itemId);
-        if (!itempk) {
-            res.status(400).jsend.fail({ 'result': 'Item with given id not found' });
-        }
-
-        const item = await itemsService.getItemByPK(itemId);
-        if (item) {
-            res.status(200).jsend.success({ 'result': item });
-        }
-
+        const item = await itemsService.getItemByPK(itemId, role, user_id);
+        res.status(200).jsend.success({ ' result': item });
     } catch (error) {
         res.status(500).jsend.fail({ 'result': error.message });
     }
@@ -54,6 +51,7 @@ router.get('/item/:itemId', authenticateToken, jsonParser, async function (req, 
 router.post('/item', authenticateToken, jsonParser, async function (req, res, next) {
     // const { category, item_name, img_url, price, sku, stock_quantity } = req.body
     const { itemName, imgUrl, itemPrice, itemSku, stockQuantity, itemCategoryId } = req.body
+    const { role, userId } = req.user
     const bodyarray = []
     // if (!category) bodyarray.push('category')
     if (!itemName) bodyarray.push('itemName')
@@ -74,7 +72,9 @@ router.post('/item', authenticateToken, jsonParser, async function (req, res, ne
 
     try {
 
-        const item = await itemsService.createItem(itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId);
+        const item = await itemsService.createItem(
+            itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId, role, userId
+        );
         return res.status(201).jsend.success({ 'result': item });
     }
     catch (error) {
@@ -89,6 +89,11 @@ router.post('/item', authenticateToken, jsonParser, async function (req, res, ne
 // UPDATE
 router.put('/item/:itemId', authenticateToken, jsonParser, async function (req, res, next) {
     const itemId = req.params.itemId;
+
+    console.log('req', req.user);
+    const user_id = req.user.userId;
+    const role = req.user.role;
+
     const { itemName, imgUrl, itemPrice, itemSku, stockQuantity, itemCategoryId } = req.body
     const bodyarray = []
     if (!itemName) bodyarray.push('itemName')
@@ -108,7 +113,8 @@ router.put('/item/:itemId', authenticateToken, jsonParser, async function (req, 
 
     // UPDATE
     try {
-        const item = await itemsService.updateItem(itemId, itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId);
+        const item = await itemsService.updateItem(itemId, itemName, itemPrice, itemSku, stockQuantity, imgUrl, itemCategoryId,
+            role, user_id);
         return res.status(200).jsend.success({ 'result': item });
     }
     catch (error) {
@@ -122,8 +128,12 @@ router.put('/item/:itemId', authenticateToken, jsonParser, async function (req, 
 // deleteItem
 router.delete('/item/:itemId', authenticateToken, jsonParser, async function (req, res, next) {
     const itemId = req.params.itemId;
+    console.log('req', req.user);
+    const user_id = req.user.userId;
+    const role = req.user.role;
+
     try {
-        const item = await itemsService.deleteItem(itemId);
+        const item = await itemsService.deleteItem(itemId, role, user_id);
         if (!item) {
             return res.status(400).jsend.fail({ 'result': 'Item with given id not found' });
         }

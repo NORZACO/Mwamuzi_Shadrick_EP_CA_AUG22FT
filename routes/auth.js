@@ -7,14 +7,13 @@ var db = require("../models");
 // var crypto = require('node:crypto');
 const bcrypt = require('bcrypt');
 
-var UserService = require("../services/UserService")
-var userService = new UserService(db);
-var bodyParser = require('body-parser')
-var jsonParser = bodyParser.json()
+const UserService = require("../services/UserService");
+const userService = new UserService(db);
+const bodyParser = require('body-parser');
+const jsonParser = bodyParser.json();
 router.use(jsend.middleware);
-var jwt = require('jsonwebtoken');
-const db2 = require('../models');
-const User = require('../models/User');
+const jwt = require('jsonwebtoken');
+const { token } = require('morgan');
 
 
 
@@ -44,9 +43,9 @@ router.post('/signup', jsonParser, async function (req, res, next) {
    }
 
    // regex username
-   const regexUsername = /^[a-zA-Z0-9]{3,30}$/;
+   const regexUsername = /^[a-zA-Z0-9_]{3,30}$/;
    if (!regexUsername.test(username)) {
-      return res.status(400).jsend.fail({ 'result': 'Username must be between 3 and 30 characters long and contain only letters and numbers' });
+      return res.status(400).jsend.fail({ 'result': 'Username must be between 3 and 30 characters long and contain only letters and numbers and underscore' });
    }
 
    // regex email
@@ -60,7 +59,7 @@ router.post('/signup', jsonParser, async function (req, res, next) {
       return res.status(400).jsend.fail({ 'result': 'Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character' });
    }
    try {
-  
+
       await userService.createUser(firstName, lastName, username, email, password, roleId);
       res.status(200).jsend.success(
          {
@@ -100,7 +99,7 @@ router.post('/login', jsonParser, async function (req, res, next) {
       return res.status(400).json({ 'result': "Email does not exist" });
    }
 
-   bcrypt.compare(password, String(user[0]?.encryptedPassword), function (err, result) {
+   bcrypt.compare(password, String(user[0]?.encryptedPassword), (err, result) => {
       if (err) {
          return res.status(500).jsend.fail({ 'result': err.message /*, 'text' :  'x' + ' ' + user[0]?.encryptedPassword */ });
       }
@@ -108,13 +107,26 @@ router.post('/login', jsonParser, async function (req, res, next) {
       if (result === true) {
          // try
          try {
-            token = jwt.sign({ email: user[0]?.email, userId: user[0]?.id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1 day" });
+            token = jwt.sign({
+               email: user[0]?.email,
+               userId: user[0]?.id,
+               roleId: user[0]?.roleId,
+               username: user[0]?.username,
+               firstname: user[0]?.firstName,
+               lastName: user[0]?.lastName,
+            },
+               process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1 day" });
          } catch (err) {
             return res.status(401).json({ 'result': err.message });
          }
          return res.status(200).json({
             'result': "Auth successful",
-            token: token
+            Token: token,
+            'User': {
+               userId: user[0]?.id,
+               roleId: user[0]?.roleId,
+               username: user[0]?.username,
+            }
          });
       }
       else {
@@ -127,27 +139,6 @@ router.post('/login', jsonParser, async function (req, res, next) {
 
 
 //logout
-router.post('/logout', jsonParser, async function (req, res, next) {
-   const { email } = req.body;
-   const missingField = [];
-   if (!email) missingField.push('email');
-   if (missingField.length > 0) {
-      return res.status(400).jsend.fail({ 'result': 'Missing fields', 'fields': missingField });
-   }
-   // regex email
-   const regexEmail = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-   if (!regexEmail.test(email)) {
-      return res.status(400).jsend.fail({ 'result': 'Email must be a valid email address' });
-   }
-   const user = await userService.getUserByEmail(email);
-   if (!user) {
-      return res.status(400).json({ 'result': "Email does not exist" });
-   }
-   return res.status(200).json({
-      'result': "Logout successful",
-      token: null
-   });
-});
 
 
 

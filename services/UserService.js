@@ -30,15 +30,17 @@ class UserService {
         })
 
         // already have 4 users with the same emial
-        if (emailCount > 3) {
+        if (emailCount > 4) {
             throw new Error('Email cannot be used by more than 4 users');
         }
 
-        // check if user with same email Exist
-        const useremail = await this.User.findOne({ where: { email: Email } });
-        if (useremail) {
-            throw new Error('User with a given email already exist');
-        }
+        // // check if user with same email Exist
+        // const useremail = await this.User.findOne({ where: { email: Email } });
+        // if (useremail) {
+        //     throw new Error('User with a given email already exist');
+        // }
+
+        
         // check if role with same roleId Exist
         const role = await this.Role.findOne({ where: { id: RoleId } });
         if (!role) {
@@ -46,10 +48,20 @@ class UserService {
         }
         // check if the role is admin. return error
         if (role.name === 'Admin') {
-            throw new Error('You can not create admin user, chnage role id to 2');
+            throw new Error(`Only admin can have ${role.name}  role`);
         }
 
 
+        // // check how many user have the same email address
+        // const emailCount = await this.User.count({
+        //     where: {
+        //         email: Email
+        //     }
+        // })
+        // // If 2 users have the same email address, both will get a 10% discount on orders.
+        // if (emailCount === 2) {
+        //     const discount = 10;
+        // }
 
         // await sequelize.transaction
         const t = await this.client.transaction();
@@ -124,7 +136,7 @@ class UserService {
     async getUserRoleId(roleId) {
         return this.User.findAll({
             where: {
-                roleId: roleId
+                roleId
             }
         })
     }
@@ -165,7 +177,7 @@ class UserService {
             {
                 esername: Username,
                 email: Email,
-                salt: Salt,
+                // salt: Salt,
                 encryptedPassword: EncryptedPassword
             },
             {

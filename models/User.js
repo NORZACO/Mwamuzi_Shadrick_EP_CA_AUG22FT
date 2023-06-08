@@ -35,13 +35,14 @@ module.exports = (sequelize, Sequelize) => {
     username: {
       type: Sequelize.DataTypes.STRING,
       allowNull: false,
+      unique: true,
     },
 
 
     email: {
       type: Sequelize.DataTypes.STRING,
       allowNull: false,
-      unique: true,
+      // unique: true,
     },
 
     encryptedPassword: {
@@ -50,12 +51,19 @@ module.exports = (sequelize, Sequelize) => {
       allowNull: false,
     },
 
-
+    // role id  uuid
     roleId: {
-      type: Sequelize.DataTypes.INTEGER,
+      type: Sequelize.DataTypes.UUID,
       allowNull: false,
-      defaultValue: 2
+      defaultValue: Sequelize.DataTypes.UUIDV4,
     },
+    
+
+    // roleId: {
+    //   type: Sequelize.DataTypes.INTEGER,
+    //   allowNull: false,
+    //   // defaultValue: 2
+    // },
 
   },
     {

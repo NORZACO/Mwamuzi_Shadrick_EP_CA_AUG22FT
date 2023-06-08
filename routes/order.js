@@ -14,19 +14,12 @@ require('dotenv').config();
 
 
 
-
-// addOrderToOrderitems
-
-
-
-
-
-
 // createOrder
 router.get('/get_order', authenticateToken, jsonParser, async (req, res) => {
     const UserId = req.user.userId;
+    
     if (!UserId) {
-        return res.status(401).jsend.fail({ "result": "missing fields" });
+        return res.status(401).jsend.fail({ "result": "missing fields UserId" });
     }
     try {
         const order = await orderService.getOrderByUser(UserId);
@@ -86,7 +79,44 @@ router.post('/add-to-order', authenticateToken, jsonParser, async (req, res) => 
 
 
 
-
+// UPDATE update-order/:ItemId
+router.put('/update-order/:ItemId', authenticateToken, jsonParser, async (req, res) => {
+    const UserId = req.user.userId;
+    const ItemId = req.params.ItemId;
+    const { itemQuantity, itemSku } = req.body;
+    const missingFiels = [];
+    if (!UserId) missingFiels.push('UserId');
+    if (!ItemId) missingFiels.push('ItemId');
+    if (!itemQuantity) missingFiels.push('itemQuantity');
+    if (!itemSku) missingFiels.push('itemSku');
+    if (missingFiels.length) {
+        return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
+    }
+    // itemid
+    const regexItemId = /^[0-9]*$/;
+    if (!regexItemId.test(ItemId)) {
+        return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
+    }
+    // UserId
+    const regexUserId = /^[0-9]*$/;
+    if (!regexUserId.test(UserId)) {
+        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
+    }
+    // rejex all, only number
+    const regexNumber = /^[0-9]*$/;
+    if (!regexNumber.test(itemQuantity)) {
+        return res.status(400).jsend.fail({ "result": "itemQuantity must be a number" });
+    }
+    try {
+        // calculate the stock
+        // const calculate_stock = itemreTurnStock - itemQuantity;
+        // create cart  ItemId, itemQuantity, itemSku
+        const updateOrder = await orderService.updateOrderItem(UserId, ItemId, itemQuantity, itemSku);
+        return res.status(200).jsend.success({ "result": updateOrder });
+    } catch (error) {
+        return res.status(500).jsend.fail({ "result": error.message });
+    }
+});
 
 
 

@@ -1,14 +1,16 @@
 require('dotenv').config()
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var jsend = require('jsend');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
+const jsend = require('jsend');
 
 
 const db = require('./models');
-var indexRouter = require('./routes/index');
+
+
+const indexRouter = require('./routes/index');
 // usersRouter
 const usersRouter = require('./routes/users');
 // authRouter
@@ -23,6 +25,8 @@ const itemsRouter = require('./routes/items');
 const cartsRouter = require('./routes/carts');
 // orderRouter
 const orderRouter = require('./routes/order');
+// setupRouter
+const setupRouter = require('./routes/utility');
 
 
 
@@ -41,7 +45,6 @@ db.sequelize.sync({ force: false }).then(() => {
 })
 
 // db.sequelize.sync({ force: true }).then(() => {
-//   console.log("Drop and re-sync db.");
 // }).then(() => {
 //   // logo
 //   console.log(`
@@ -49,8 +52,8 @@ db.sequelize.sync({ force: false }).then(() => {
 //   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
 //   ------------------------------------------------------------------
 //   `)
-//   createCategoryIfNotFind();
-//   updateStock()
+//   // createCategoryIfNotFind();
+//   // updateStock()
 
 // })
 
@@ -58,7 +61,7 @@ db.sequelize.sync({ force: false }).then(() => {
 
 
 
-var app = express();
+const app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -80,6 +83,7 @@ app.use('/', categoryRouter);
 app.use('/', itemsRouter);
 app.use('/', cartsRouter);
 app.use('/', orderRouter);
+app.use('/', setupRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

@@ -7,7 +7,7 @@ const CartServices = require('../services/CartServices');
 const db = require('../models');
 const cartServices = new CartServices(db);
 router.use(jsend.middleware);
-const authenticateToken = require('../securedEndpoint');
+const  authenticateToken  = require('../securedEndpoint');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 

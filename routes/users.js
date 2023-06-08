@@ -7,7 +7,7 @@ const UserService = require('../services/UserService');
 const db = require('../models');
 const userService = new UserService(db);
 router.use(jsend.middleware);
-const authenticateToken = require('../securedEndpoint');
+const  authenticateToken  = require('../securedEndpoint');
 
 
 // GET ALL USER

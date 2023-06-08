@@ -7,7 +7,7 @@ const RolesService = require('../services/RoleService');
 const db = require('../models');
 const roleService = new RolesService(db);
 router.use(jsend.middleware);
-const authenticateToken = require('../securedEndpoint');
+const  authenticateToken  = require('../securedEndpoint');
 
 
 
@@ -15,6 +15,7 @@ const authenticateToken = require('../securedEndpoint');
 
 //GET ALL ROLES
 router.get('/roles', authenticateToken, async function (req, res, next) {
+    
     try {
         const roles = await roleService.getAllRoles();
         res.status(200).jsend.success({ 'result': roles });
