@@ -16,10 +16,12 @@ require('dotenv').config();
 // GET ALL ITEMS getAllItems
 router.get('/items', authenticateToken, async function (req, res, next) {
     console.log('req', req.user);
-    const user_id = req.user.userId;
-    const role = req.user.role;
+
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
+
     try {
-        const items = await itemsService.getAllItemsByUser(role, user_id);
+        const items = await itemsService.getAllItemsByUser(jwt_user_role, jwt_user_id);
         res.status(200).jsend.success({ ' result': items });
     } catch (error) {
         res.status(500).jsend.fail({ 'result': error.message });

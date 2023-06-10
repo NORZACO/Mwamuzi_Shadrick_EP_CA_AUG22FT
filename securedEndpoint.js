@@ -1,16 +1,22 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { uid } = require('uid')
+const db = require('./models');
 
-function authenticateToken(req, res, next) {
+console.log('XXXXXXXXXXXXXX:', uid(100));
+
+async function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
+
+
+
   if (token == null) {
     req.user = {
-      id : `Guest`,
+      id: `Guest`,
       username: 'Guest',
       // role: `Guest-${uid(20)}`
-      role: '310521a6-8db6-4fa5-958d-4b620ee40eb1'
+      role: process.env.ACCESS_GUEST_ROLE
     };
     return next()
   }

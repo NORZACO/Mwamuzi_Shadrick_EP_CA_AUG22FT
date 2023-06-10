@@ -2,11 +2,7 @@
 
 const apiUrl = 'http://143.42.108.232:8888/items/stock'
 const axios = require('axios');
-const validator = require('validator');
 const bcrypt = require(`bcrypt`);
-const { Op, sequelize } = require("sequelize");
-const { jsend } = require('jsend');
-
 
 
 const first_name = 'Mwamuzi';
@@ -44,7 +40,7 @@ class UtilityServices {
         await this.Role.create({ name: 'Admin' });
         await this.Role.create({ name: 'User' });
         // await this.Role.create({ name: 'Member' });
-        await this.Role.create({ name: 'Guest' });
+        await this.Role.create({ id: 'guest-user-68ea5cbf-60f0-4113-8d29-f', name: 'Guest' });
         // await this.Role.create({ name: 'Paid_member' });
 
         try {

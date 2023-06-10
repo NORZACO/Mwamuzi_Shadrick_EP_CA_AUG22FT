@@ -13,11 +13,6 @@ const  authenticateToken  = require('../securedEndpoint');
 
 // Utilityprepopulation
 router.post('/setup', async function (req, res, next) {
-    // const { role } = req.user;
-    // const role_name = await categoryService.getRoleName(role);
-    // if (role_name !== 'Admin') {
-    //     return res.status(401).jsend.fail({ 'result': `Unauthorized  page, only ${role_name} are allowed here` });
-    // }
     try {
         await utilityServices.Utilityprepopulation();
         const utility = await utilityServices.updateItem();
