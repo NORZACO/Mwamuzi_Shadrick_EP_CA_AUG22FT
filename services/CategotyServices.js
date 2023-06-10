@@ -135,69 +135,6 @@ class CatergotyServices {
 
 
 
-    /*
-        async updateCategory(cat_id, categName, jwt_user_role, jwt_user_id) {
-                    // LOG
-                    console.log(`jwt_user_role: ${jwt_user_role}`);
-                    console.log(`jwt_user_id: ${jwt_user_id}`);
-            
-                    // find user role by id
-                    const userRole = await this.Role.findByPk(jwt_user_role);
-                    // find user by id
-                    const user = await this.User.findByPk(jwt_user_id);
-    
-            // Guest user
-    
-    
-    
-    
-    
-    
-    
-            return this.Category.update({
-                name: categName
-            }, {
-                where: {
-                    id: cat_id
-                }
-            })
-        }
-    
-    */
-
-
-    // // create category using findOcreate
-    // async updateCategory(categoryName, jwt_user_role, jwt_user_id) {
-    //     // LOG
-    //     console.log(`jwt_user_role: ${jwt_user_role}`);
-    //     console.log(`jwt_user_id: ${jwt_user_id}`);
-
-    //     // find user role by id
-    //     const userRole = await this.Role.findByPk(jwt_user_role);
-    //     // find user by id
-    //     const user = await this.User.findByPk(jwt_user_id);
-
-
-    //     // Guest user
-    //     if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-    //         throw new Error('Guest user cannot create category');
-    //     }
-
-    //     // Registered
-    //     if (userRole.id === user.roleId && userRole.name === 'Registered') {
-    //         throw new Error('Registered user cannot create category');
-    //     }
-    //     // Admin
-    //     if (userRole.id === user.roleId && userRole.name === 'Admin') {
-    //         // update
-
-
-
-
-
-    //         return dbCategory;
-    //     }
-    // }
 
 
 
@@ -305,66 +242,66 @@ class CatergotyServices {
 
     //deleteCategory before delete hook
     async deleteCategory(category_Id, jwt_user_role, jwt_user_id) {
-    // LOG
-    console.log(`jwt_user_role: ${jwt_user_role}`);
-    console.log(`jwt_user_id: ${jwt_user_id}`);
+        // LOG
+        console.log(`jwt_user_role: ${jwt_user_role}`);
+        console.log(`jwt_user_id: ${jwt_user_id}`);
 
-    // find user role by id
-    const userRole = await this.Role.findByPk(jwt_user_role);
-    // find user by id
-    const user = await this.User.findByPk(jwt_user_id);
+        // find user role by id
+        const userRole = await this.Role.findByPk(jwt_user_role);
+        // find user by id
+        const user = await this.User.findByPk(jwt_user_id);
 
-    // Guest user
-    if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-        throw new Error(`Access denied`)
-    }
-    // Registered
-    if (userRole.id === user.roleId && userRole.name === 'Registered') {
-        throw new Error(`Access denied`)
-    }
+        // Guest user
+        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
+            throw new Error(`Access denied`)
+        }
+        // Registered
+        if (userRole.id === user.roleId && userRole.name === 'Registered') {
+            throw new Error(`Access denied`)
+        }
 
-    // Admin
-    if (userRole.id === user.roleId && userRole.name === 'Admin') {
-        // transaction t
-        const t = await this.client.transaction();
-        try {
-            const cat = await this.Category.findByPk(category_Id)
+        // Admin
+        if (userRole.id === user.roleId && userRole.name === 'Admin') {
+            // transaction t
+            const t = await this.client.transaction();
+            try {
+                const cat = await this.Category.findByPk(category_Id)
 
-            if (!cat) {
-                throw new Error(`Category with id: ${category_Id} does not exist`);
-            }
-
-
-            const itemCount = await this.Item.count({
-                where: {
-                    categoryId: category_Id
+                if (!cat) {
+                    throw new Error(`Category with id: ${category_Id} does not exist`);
                 }
-            });
-
-            if (itemCount > 0) {
-                throw new Error('Category has items, thus cannot be deleted');
-            }
 
 
-            // delete Item
-            await this.Category.destroy({
-                where: {
-                    id: category_Id
+                const itemCount = await this.Item.count({
+                    where: {
+                        categoryId: category_Id
+                    }
+                });
+
+                if (itemCount > 0) {
+                    throw new Error('Category has items, thus cannot be deleted');
                 }
-            }, { transaction: t });
+
+
+                // delete Item
+                await this.Category.destroy({
+                    where: {
+                        id: category_Id
+                    }
+                }, { transaction: t });
 
 
 
-            // commit
-            await t.commit();
-            return `Succefully deleted`;
-        } catch (error) {
-            // rollback
-            await t.rollback();
-            throw error;
+                // commit
+                await t.commit();
+                return `Succefully deleted`;
+            } catch (error) {
+                // rollback
+                await t.rollback();
+                throw error;
+            }
         }
     }
-}
 
 
 

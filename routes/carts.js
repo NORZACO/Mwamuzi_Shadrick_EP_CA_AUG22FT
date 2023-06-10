@@ -7,7 +7,7 @@ const CartServices = require('../services/CartServices');
 const db = require('../models');
 const cartServices = new CartServices(db);
 router.use(jsend.middleware);
-const  authenticateToken  = require('../securedEndpoint');
+const authenticateToken = require('../securedEndpoint');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -16,12 +16,11 @@ require('dotenv').config();
 
 // getAllCarts access only by Admin || GET /allcarts 
 router.get('/allcarts', authenticateToken, jsonParser, async (req, res) => {
-    const userId = req.user.userId;
-    if (!userId) {
-        return res.status(400).jsend.fail({ "result": "userId is required" });
-    }
+    console.log('req', req.user);
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
     try {
-        const carts = await cartServices.getAllCarts();
+        const carts = await cartServices.getAllCarts(jwt_user_role, jwt_user_id);
         if (!carts) {
             return res.status(400).jsend.fail({ "result": "Carts not found" });
         }
@@ -35,12 +34,12 @@ router.get('/allcarts', authenticateToken, jsonParser, async (req, res) => {
 
 // GET MY CART BY ID || Cart endpointsGET /cart 
 router.get('/cart', authenticateToken, jsonParser, async (req, res) => {
-    const cartId = req.user.userId;
-    if (!cartId) {
-        return res.status(400).jsend.fail({ "result": "cartId is required" });
-    }
+    console.log('req', req.user);
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
+
     try {
-        const cart = await cartServices.getCartByUserId(cartId);
+        const cart = await cartServices.getCartByUserId(jwt_user_role, jwt_user_id);
         if (!cart) {
             return res.status(400).jsend.fail({ "result": "Cart with given id not found" });
         }
@@ -53,14 +52,17 @@ router.get('/cart', authenticateToken, jsonParser, async (req, res) => {
 
 
 // createCartAndCartitem JWTuserId, ItemId, ItemQuantity || POST /cart_item
-router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
-    const UserId = req.user.userId;
-    const { ItemId, itemQuantity, itemSku } = req.body;
+router.post(`/cart_item`, authenticateToken, jsonParser, async (req, res, next) => {
+    console.log('req', req.user);
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
+
+    const { ItemId, itemQuantity,  } = req.body;
     const missingFiels = [];
-    if (!UserId) missingFiels.push('UserId');
+    // if (!UserId) missingFiels.push('UserId');
     if (!ItemId) missingFiels.push('ItemId');
     if (!itemQuantity) missingFiels.push('itemQuantity');
-    if (!itemSku) missingFiels.push('itemSku');
+    // if (!itemSku) missingFiels.push('itemSku');
     if (missingFiels.length) {
         return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
     }
@@ -75,17 +77,16 @@ router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
     if (!regexItemId.test(ItemId)) {
         return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
     }
-    // UserId
-    const regexUserId = /^[0-9]*$/;
-    if (!regexUserId.test(UserId)) {
-        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
-    }
 
     try {
-        // calculate the stock
-        // const calculate_stock = itemreTurnStock - itemQuantity;
-        // create cart  ItemId, itemQuantity, itemSku 
-        const NewCart = await cartServices.addItemToCart_and_ToCartItem_ManagedTransactions(UserId, ItemId, itemQuantity, itemSku);
+
+        const NewCart = await cartServices.addItemToCart(
+            jwt_user_role,
+            jwt_user_id,
+            ItemId,
+            itemQuantity,
+            // itemSku
+        );
 
         return res.status(200).jsend.success({ "result": NewCart });
     } catch (error) {
@@ -99,14 +100,17 @@ router.post('/add-to-cart', authenticateToken, jsonParser, async (req, res) => {
 
 //UPDATE  updateItemInCart_and_ToCartItem_ManagedTransactions || PUT /cart_item/:id 
 router.put('/update-cart/:ItemId', authenticateToken, jsonParser, async (req, res) => {
-    const UserId = req.user.userId;
+
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
     const ItemId = req.params.ItemId;
-    const { itemQuantity, itemSku } = req.body;
+
+    const { itemQuantity } = req.body;
     const missingFiels = [];
-    if (!UserId) missingFiels.push('UserId');
+    // if (!UserId) missingFiels.push('UserId');
     if (!ItemId) missingFiels.push('ItemId');
     if (!itemQuantity) missingFiels.push('itemQuantity');
-    if (!itemSku) missingFiels.push('itemSku');
+    // if (!itemSku) missingFiels.push('itemSku');
     if (missingFiels.length) {
         return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
     }
@@ -120,13 +124,9 @@ router.put('/update-cart/:ItemId', authenticateToken, jsonParser, async (req, re
     if (!regexItemId.test(ItemId)) {
         return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
     }
-    // UserId
-    const regexUserId = /^[0-9]*$/;
-    if (!regexUserId.test(UserId)) {
-        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
-    }
+
     try {
-        const NewCart = await cartServices.updateItemInCart_and_ToCartItem_ManagedTransactions(UserId, ItemId, itemQuantity, itemSku);
+        const NewCart = await cartServices.updateItemInCart(jwt_user_role, jwt_user_id,  ItemId, itemQuantity)
         console.log(NewCart);
         return res.status(200).jsend.success({ "result": NewCart });
     } catch (error) {
@@ -137,11 +137,13 @@ router.put('/update-cart/:ItemId', authenticateToken, jsonParser, async (req, re
 
 
 // DELETE deleteItemInCart_and_ToCartItem_ManagedTransactions || DELETE /cart_item/:id 
-router.delete('/delete-cart_item/:ItemId', authenticateToken, jsonParser, async (req, res) => {
-    const UserId = req.user.userId;
-    const ItemId = req.params.ItemId;
+router.delete('/cart_item/:id', authenticateToken, jsonParser, async (req, res) => {
+
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
+
+    const ItemId = req.params.id;
     const missingFiels = [];
-    if (!UserId) missingFiels.push('UserId');
     if (!ItemId) missingFiels.push('ItemId');
     if (missingFiels.length) {
         return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
@@ -151,13 +153,9 @@ router.delete('/delete-cart_item/:ItemId', authenticateToken, jsonParser, async 
     if (!regexItemId.test(ItemId)) {
         return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
     }
-    // UserId
-    const regexUserId = /^[0-9]*$/;
-    if (!regexUserId.test(UserId)) {
-        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
-    }
+
     try {
-        const NewCart = await cartServices.deleteItemInCart_and_ToCartItem_ManagedTransactions(UserId, ItemId);
+        const NewCart = await cartServices.deleteItemInCart(jwt_user_role, jwt_user_id, ItemId);
         return res.status(200).jsend.success({ "result": NewCart });
     } catch (error) {
         return res.status(500).jsend.fail({ "result": error.message });
