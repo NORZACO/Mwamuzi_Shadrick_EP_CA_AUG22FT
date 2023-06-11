@@ -34,13 +34,8 @@ class UserService {
             throw new Error('Email cannot be used by more than 4 users');
         }
 
-        // // check if user with same email Exist
-        // const useremail = await this.User.findOne({ where: { email: Email } });
-        // if (useremail) {
-        //     throw new Error('User with a given email already exist');
-        // }
 
-        
+
         // check if role with same roleId Exist
         const role = await this.Role.findOne({ where: { id: RoleId } });
         if (!role) {
@@ -50,18 +45,6 @@ class UserService {
         if (role.name === 'Admin') {
             throw new Error(`Only admin can have ${role.name}  role`);
         }
-
-
-        // // check how many user have the same email address
-        // const emailCount = await this.User.count({
-        //     where: {
-        //         email: Email
-        //     }
-        // })
-        // // If 2 users have the same email address, both will get a 10% discount on orders.
-        // if (emailCount === 2) {
-        //     const discount = 10;
-        // }
 
         // await sequelize.transaction
         const t = await this.client.transaction();
@@ -121,11 +104,11 @@ class UserService {
 
 
 
-    async getUserByEmail(Email) {
+    async find_user(username) {
         return this.User.findAll(
             {
                 where: {
-                    email: Email
+                    username
                 }
                 // ,  attributes: ['email', 'salt', 'encryptedPassword']
             }
@@ -222,8 +205,73 @@ class UserService {
 
 
 
+    // create user
+    async createUser(FirstName, LastName, Username, Email, password, RoleId) {
+        // check if user with same username Exist
+        const user = await this.User.findOne({ where: { username: Username } });
+        if (user) {
+            throw new Error('User with a given username already exist');
+        }
 
-}
+
+        // already have 4 users with the same emial
+        if (await this.User.count({ where: { email: Email } }) > 4) {
+            throw new Error('Email cannot be used by more than 4 users');
+        }
+
+        // check role
+        const role = await this.Role.findOne({ where: { id: RoleId } });
+        if (!role) {
+            throw new Error('Role with a given roleId not found');
+        }
+
+        // check if the role is admin. return error
+        if (role.name === 'Admin') {
+            throw new Error(`Only admin can have ${role.name}  role`);
+        }
+
+        // await sequelize.transaction
+        const t = await this.client.transaction();
+
+        try {
+// find or create user with username
+const santRount = 10;
+const EncryptedPassword = await bcrypt.hash(password, santRount);
+
+        const [newUser, created] = await this.User.findOrCreate({
+            where: { username: Username },
+            defaults: {
+                firstName: FirstName,
+                lastName: LastName,
+                username: Username,
+                email: Email,
+                encryptedPassword: EncryptedPassword,
+                roleId: RoleId
+            },
+            transaction: t
+        });
+
+        if (!created) {
+            throw new Error('User with a given username already exist');
+        }
+
+            await t.commit();
+
+            return newUser;
+
+        }
+        catch (error) {
+            await t.rollback();
+            throw error;
+        }
+    }
+
+
+
+
+
+
+    }
 //TODO: Creat user service
 module.exports = UserService;
 

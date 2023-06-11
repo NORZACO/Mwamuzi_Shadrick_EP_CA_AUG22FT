@@ -1,5 +1,5 @@
 
-const { Op, sequelize } = require("sequelize");
+const { Op, sequelize, where } = require("sequelize");
 
 
 class CatergotyServices {
@@ -22,6 +22,9 @@ class CatergotyServices {
         console.log(`jwt_user_role: ${jwt_user_role}`);
         console.log(`jwt_user_id: ${jwt_user_id}`);
 
+
+        
+
         // find user role by id
         const userRole = await this.Role.findByPk(jwt_user_role);
         // find user by id
@@ -29,16 +32,12 @@ class CatergotyServices {
 
         // Guest user
         if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-            return await await this.Category.findAll(
-                { attributes: ['id', 'name'] }
-            )
+            throw new Error(`No access for Guest`)
         }
 
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
-            return await this.Category.findAll({
-                attributes: ['id', 'name'],
-            })
+            throw new Error(`No access for Registered`)
         }
         // Admin
         if (userRole.id === user.roleId && userRole.name === 'Admin') {
@@ -72,18 +71,20 @@ class CatergotyServices {
 
         // Guest user
         if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-            return await this.Category.findByPk(categoryId)
+            throw new Error(`No access for Guest`)
         }
 
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
-            return await this.Category.findByPk(categoryId)
+            throw new Error(`No access for Registered`)
         }
         // Admin
         if (userRole.id === user.roleId && userRole.name === 'Admin') {
             return await this.Category.findByPk(categoryId)
         }
     }
+
+    
 
 
     // create category using findOcreate
@@ -144,15 +145,26 @@ class CatergotyServices {
         console.log(`jwt_user_role: ${jwt_user_role}`);
         console.log(`jwt_user_id: ${jwt_user_id}`);
 
+
+
+        // COUNT Category
+        // const countCategory = await this.Category.count();
+        // if (await this.Category.count() === 0) {
+        //     throw new Error(`Empy Category`);
+        // }
+
         // find user role by id
         const userRole = await this.Role.findByPk(jwt_user_role);
         // find user by id
         const user = await this.User.findByPk(jwt_user_id);
 
         // Guest user
-        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-            throw new Error(`Access denied`)
+        if (jwt_user_role === process.env.ACCESS_GUEST_ROLE) {
+            throw new Error(`Only admin can access this page`)
         }
+
+
+
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
             throw new Error(`Access denied`)
@@ -232,13 +244,13 @@ class CatergotyServices {
 
 
 
-    async deleteCategoryWithNoItems(cat_id) {
-        return this.Category.destroy({
-            where: {
-                id: cat_id
-            }
-        })
-    }
+    // async deleteCategoryWithNoItems(cat_id) {
+    //     return this.Category.destroy({
+    //         where: {
+    //             id: cat_id
+    //         }
+    //     })
+    // }
 
     //deleteCategory before delete hook
     async deleteCategory(category_Id, jwt_user_role, jwt_user_id) {
@@ -246,19 +258,35 @@ class CatergotyServices {
         console.log(`jwt_user_role: ${jwt_user_role}`);
         console.log(`jwt_user_id: ${jwt_user_id}`);
 
+
+
+        // COUNT Category and if it is guest
+        // const countCategory = await this.Category.count();
+        if (jwt_user_id === undefined) {
+            throw new Error(`No access for guest`);
+        }
+
+
         // find user role by id
         const userRole = await this.Role.findByPk(jwt_user_role);
         // find user by id
         const user = await this.User.findByPk(jwt_user_id);
 
-        // Guest user
-        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-            throw new Error(`Access denied`)
+        // // COUNT Category and check if it is admin
+        if (jwt_user_id && await this.User.count({ where: { roleId: jwt_user_role } }) === 0) {
+            throw new Error(`No access for register`);
         }
+
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
             throw new Error(`Access denied`)
         }
+
+        // Guest user
+        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
+            throw new Error(`Access denied`)
+        }
+
 
         // Admin
         if (userRole.id === user.roleId && userRole.name === 'Admin') {

@@ -75,25 +75,23 @@ router.post('/signup', jsonParser, async function (req, res, next) {
 
 
 router.post('/login', jsonParser, async function (req, res, next) {
-   const { email, password } = req.body;
+   const { username, password } = req.body;
 
    const missingField = [];
-   if (!email) missingField.push('email');
+   if (!username) missingField.push('username');
    if (!password) missingField.push('password');
    if (missingField.length > 0) {
       return res.status(400).jsend.fail({ 'result': 'Missing fields', 'fields': missingField });
    }// regex email
-   const regexEmail = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-   if (!regexEmail.test(email)) {
-      return res.status(400).jsend.fail({ 'result': 'Email must be a valid email address' });
-   }
+
+
    // regex password
    const regexPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/;
    if (!regexPassword.test(password)) {
       return res.status(400).jsend.fail({ 'result': 'Password must be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character' });
    }
 
-   const user = await userService.getUserByEmail(email);
+   const user = await userService.find_user(username);
 
    if (!user) {
       return res.status(400).json({ 'result': "Email does not exist" });
@@ -105,7 +103,20 @@ router.post('/login', jsonParser, async function (req, res, next) {
       }
       let token;
       if (result === true) {
-         // try
+
+         // const options = { expiresIn: '1h' }
+         // curent time stamp
+         const current_time_stamp = Math.floor(Date.now() / 1000) // curent time in secoonds
+         // const options = { expiresIn: current_time_stamp + 60 * 60 * 1 } // 1 hour
+         // const options = { expiresIn: current_time_stamp + (60 * 60 * 24 * 1) } // 1 day
+         // const options = { expiresIn: current_time_stamp + 60 * 60 * 24 * 7 } // 7 days
+         // const options = { expiresIn: current_time_stamp + 60 * 60 * 24 * 30 } // 30 days
+         // 12 minutes
+         // const options = { expiresIn: current_time_stamp + (60 * 12) } // 12 minutes
+         // 12 seconds
+         // const options = { expiresIn: current_time_stamp + 12 } // 12 seconds
+
+         const options = { expiresIn: '24h' }
          try {
             token = jwt.sign({
                email: user[0]?.email,
@@ -115,7 +126,7 @@ router.post('/login', jsonParser, async function (req, res, next) {
                firstname: user[0]?.firstName,
                lastName: user[0]?.lastName,
             },
-               process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1 day" });
+               process.env.ACCESS_TOKEN_SECRET, options);
          } catch (err) {
             return res.status(401).json({ 'result': err.message });
          }

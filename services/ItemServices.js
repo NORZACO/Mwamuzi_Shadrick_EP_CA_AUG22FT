@@ -23,15 +23,16 @@ class ItemServices {
     }
 
 
-    async getAllItems() {
-        return this.Item.findAll({
-            attributes: [['item_name', 'product'], ['stock_quantity', 'In-stock'], 'price',],
-            include: {
-                model: this.Category,
-                attributes: ['name']
-            }
-        })
-    }
+    // async getAllItems() {
+    //     return this.Item.findAll({
+    //         attributes: [['item_name', 'product'], ['stock_quantity', 'In-stock'], 'price',],
+    //         include: {
+    //             model: this.Category,
+    //             attributes: ['name']
+    //         }
+    //     })
+    // }
+
 
 
 
@@ -49,19 +50,27 @@ class ItemServices {
 
         // Guest user
         if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
-            return this.Item.findAll({
-                attributes: [['item_name', 'Guest product'], ['stock_quantity', 'In-stock'], 'price',],
+            return await this.Item.findAll({
+                where: {
+                    stock_quantity: {
+                        [Op.gt]: 0
+                    }
+                },
+                attributes: [['item_name', `${guestView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', ['img_url', 'image']],
                 include: {
                     model: this.Category,
                     attributes: ['name']
                 }
-            })
+            });
         }
+
+
+
 
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
             return this.Item.findAll({
-                attributes: [['item_name', 'Registered Product'], 'price',],
+                attributes: [['item_name', `${registerView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', 'img_url'],
                 include: {
                     model: this.Category,
                     attributes: ['name']
@@ -72,7 +81,7 @@ class ItemServices {
         // Admin
         if (userRole.id === user.roleId && userRole.name === 'Admin') {
             return this.Item.findAll({
-                attributes: [['item_name', 'Admin Product'], ['stock_quantity', 'In-stock'], 'price',],
+                attributes: [['item_name', `${adminView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', 'img_url'],
                 include: {
                     model: this.Category,
                     attributes: ['name']

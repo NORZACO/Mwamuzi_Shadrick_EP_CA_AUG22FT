@@ -1,9 +1,5 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { uid } = require('uid')
-const db = require('./models');
-
-console.log('XXXXXXXXXXXXXX:', uid(100));
 
 async function authenticateToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -24,7 +20,20 @@ async function authenticateToken(req, res, next) {
   //   message: 'Missing or invalid JWT token. Please include a valid token in the Authorization header of your request.'
 
 
-  const options = { expiresIn: '12h', }
+  // const options = { expiresIn: '1h' }
+// curent time stamp
+  const current_time_stamp = Math.floor(Date.now() / 1000) // curent time in secoonds
+  // const options = { expiresIn: current_time_stamp + 60 * 60 * 1 } // 1 hour
+  // const options = { expiresIn: current_time_stamp + (60 * 60 * 24 * 1) } // 1 day
+  // const options = { expiresIn: current_time_stamp + 60 * 60 * 24 * 7 } // 7 days
+  // const options = { expiresIn: current_time_stamp + 60 * 60 * 24 * 30 } // 30 days
+  // 12 minutes
+  // const options = { expiresIn: current_time_stamp + (60 * 12) } // 12 minutes
+  // 12 seconds
+  // const options = { expiresIn: current_time_stamp + 12 } // 12 seconds
+
+  const options = { expiresIn: '24h' } // 2 minutes
+
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, options, (err, user) => {
     if (err) {
       return res.status(403).jsend.fail({

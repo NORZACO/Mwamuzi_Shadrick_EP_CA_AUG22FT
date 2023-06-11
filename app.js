@@ -33,30 +33,26 @@ const setupRouter = require('./routes/utility');
 
 
 
-const { updateStock, createCategoryIfNotFind, updateItem } = require('./Utility/index');
+
+
+// db.sequelize.sync({ force: true }).then(() => {
+//   //logo
+//   console.log(`
+//   ------------------------------------------------------------------
+//   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
+//   ------------------------------------------------------------------
+//   `)
+// })
 
 db.sequelize.sync({ force: false }).then(() => {
-  //logo
+}).then(() => {
+  // logo
   console.log(`
   ------------------------------------------------------------------
   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
   ------------------------------------------------------------------
   `)
 })
-
-// db.sequelize.sync({ force: true }).then(() => {
-// }).then(() => {
-//   // logo
-//   console.log(`
-//   ------------------------------------------------------------------
-//   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
-//   ------------------------------------------------------------------
-//   `)
-//   // createCategoryIfNotFind();
-//   // updateStock()
-
-// })
-
 
 
 

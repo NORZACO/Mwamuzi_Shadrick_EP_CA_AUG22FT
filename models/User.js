@@ -59,10 +59,12 @@ module.exports = (sequelize, Sequelize) => {
     },
     
 
-    // roleId: {
+    // familyNumber : {
     //   type: Sequelize.DataTypes.INTEGER,
     //   allowNull: false,
-    //   // defaultValue: 2
+    //   defaultValue: 0,
+    //   unique: true,
+
     // },
 
   },

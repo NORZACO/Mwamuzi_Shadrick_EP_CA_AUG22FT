@@ -68,6 +68,12 @@ class CatergotyServices {
         console.log(`jwt_user_role: ${jwt_user_role}`);
         console.log(`jwt_user_id: ${jwt_user_id}`);
 
+        // COUNT CARTS
+        // const countCarts = await this.Cart.count();
+        // if (await this.Cart.count() === 0) {
+        //     throw new Error(`Empy carts`);
+        // }
+
         // find user role by id
         const userRole = await this.Role.findByPk(jwt_user_role);
         // find user by id
@@ -76,36 +82,21 @@ class CatergotyServices {
         // Guest user
         if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
             // throrw error
-            throw new Error(`Access denied`);
+            throw new Error(`No Guest Access `);
         }
 
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
-            throw new Error(`Access denied`);
+            throw new Error(`No Registered Access `);
         }
 
         // Admin
         if (userRole.id === user.roleId && userRole.name === 'Admin') {
-            return await this.client.query(`
-        SELECT Carts.id, 
-              Carts.UserId, 
-              Carts.totalPrice, 
-              Users.firstName, 
-              Users.lastName, 
-              Items.id, 
-              Items.item_name, 
-              Items.price, 
-              Items.sku, 
-              Items.stock_quantity, 
-              CartItems.quantity 
-        FROM Carts 
-        INNER JOIN Users 
-        ON Carts.UserId = Users.id 
-        INNER JOIN CartItems 
-        ON Carts.id = CartItems.CartId 
-        INNER JOIN Items 
-        ON CartItems.ItemId = Items.id`,
-                { type: QueryTypes.SELECT });
+            const allcarts = await this.client.query(`SELECT * FROM allcarts `, { type: QueryTypes.SELECT });
+            if (allcarts.length === 0) {
+                throw new Error(`Empy carts`);
+            }
+            return allcarts;
         }
     }
 
@@ -113,24 +104,24 @@ class CatergotyServices {
 
 
 
-
-    async getCartByUserId(jwt_user_role, jwt_user_id) {
-        return await this.Cart.findAll({
-            where: { userId: jwt_user_role },
-            include: [
-                {
-                    model: this.Item,
-                    attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
-                    include: [{
-                        model: this.Category,
-                        attributes: ['name']
+    /*
+        async getCartByUserId(jwt_user_role, jwt_user_id) {
+            return await this.Cart.findAll({
+                where: { userId: jwt_user_role },
+                include: [
+                    {
+                        model: this.Item,
+                        attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
+                        include: [{
+                            model: this.Category,
+                            attributes: ['name']
+                        }
+                        ]
                     }
-                    ]
-                }
-            ]
-        });
-    }
-
+                ]
+            });
+        }
+    */
 
 
 
@@ -174,20 +165,7 @@ class CatergotyServices {
                 ]
             })
         }
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -212,7 +190,7 @@ class CatergotyServices {
 
         // Admin
         if (userRole.id === user.roleId && userRole.name === 'Admin') {
-            throw new Error(`Admin cannot view registered user"s cart`);
+            throw new Error(`Use your personal acount`);
         }
 
         // Registered
@@ -231,7 +209,7 @@ class CatergotyServices {
             // check
             if (cartItem) {
                 `${item.quantity} ${cartItem.quantity} + ${itemQuantity}`
-                if (item.stock_quantity < cartItem.quantity + itemQuantity) {
+                if ((cartItem.quantity + itemQuantity) > item.stock_quantity) {
                     throw new Error(`Out-of-stock`)// ${item.stock_quantity} < ${cartItem.quantity} + ${itemQuantity}`);
                 }
             }
@@ -239,88 +217,88 @@ class CatergotyServices {
 
             const t = await this.client.transaction();
             // https://sequelize.org/docs/v6/core-concepts/model-querying-finders/#findorcreate
+            try {
 
-            // find cart by id, if not create cart totalPrice, status, createdAt, updatedAt, UserId
-            const [create_new_cart, created] = await this.Cart.findOrCreate({
-                where: { userId: user.id },
-                defaults: {
-                    totalPrice: itemQuantity * item.price,
-                    status: 'active',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    UserId: user.id
-                }
-            });
-            console.log(`create_new_cart: ${create_new_cart}\ncreated: ${created}`);
-
-
-            // find cartItem by cartId and itemId, if not create cartItem quantity, createdAt, updatedAt, CartId, ItemId
-            const [create_new_cartItem, created_cartItem] = await this.CartItem.findOrCreate({
-                where: { CartId: create_new_cart.id, ItemId: item.id },
-                defaults: {
-                    quantity: itemQuantity,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    CartId: create_new_cart.id,
-                    ItemId: item.id
-                }
-            });
-
-            // if not created, updated the CartItem quqntity
-            if (!created_cartItem) {
-                const update_cartItem = await this.CartItem.update(
-                    { quantity: create_new_cartItem.quantity + itemQuantity },
-                    { where: { CartId: create_new_cart.id, ItemId: item.id } }
-                );
-                console.log(`update_cartItem: ${update_cartItem}`);
-            }
-
-            // if created update cart totalPrice
-            console.log(`create_new_cartItem: ${create_new_cartItem}\ncreated_cartItem: ${created_cartItem}`);
-
-
-            // update cart totalPrice
-            const update_cart = await this.Cart.update(
-                { totalPrice: create_new_cart.totalPrice + (itemQuantity * item.price) },
-                { where: { id: create_new_cart.id } }
-            );
-
-
-            /*
-                        // if created update item stock_quantity
-                        console.log(`update_cart: ${update_cart}`);
-                        // update item stock_quantity
-                        const update_item = await this.Item.update(
-                            { stock_quantity: item.stock_quantity - itemQuantity },
-                            { where: { id: item.id } }
-                        );
-            */
-            // if created commit transaction
-            // console.log(`update_item: ${update_item}`);
-
-
-
-            // commit transaction
-            await t.commit();
-            // return cart
-            return await this.Cart.findAndCountAll(
-                {
+                // Create or find a cart associated with a user
+                const [createNewCart, created] = await this.Cart.findOrCreate({
                     where: { userId: user.id },
-                    include: [
-                        {
-                            model: this.Item,
-                            attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
-                            include: [{
-                                model: this.Category,
-                                attributes: ['name']
-                            }
-                            ]
-                        }
-                    ]
+                    defaults: {
+                        totalPrice: itemQuantity * item.price,
+                        status: 'active',
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        UserId: user.id
+                    }
+                });
+
+                // Create or find a cart item associated with the cart and item
+                const [createNewCartItem, createdCartItem] = await this.CartItem.findOrCreate({
+                    where: { CartId: createNewCart.id, ItemId: item.id },
+                    defaults: {
+                        quantity: itemQuantity,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        CartId: createNewCart.id,
+                        ItemId: item.id
+                    }
+                });
+
+                // Check if the cart is created or found
+                if (created && createdCartItem) {
+                    console.log('\n\nNew cart created and new cart item created\n\n');
+
+
+                } else if (!created && !createdCartItem) {
+                    console.log('\n\nExisting cart found and existing cart item found\n\n');
+                    // Calculate the updated total price
+                    const totalPrice = createNewCart.totalPrice + itemQuantity * item.price;
+                    // Update the total price and cart item quantity
+                    await createNewCart.update({ totalPrice });
+                    await createNewCartItem.update({ quantity: createNewCartItem.quantity + itemQuantity });
+
+
+                } else if (!created && createdCartItem) {
+                    console.log('\n\nExisting cart found and new cart item created\n\n');
+                    // Calculate the updated total price
+                    const totalPrice = createNewCart.totalPrice + itemQuantity * item.price;
+                    // Update the total price and cart item quantity
+                    await createNewCart.update({ totalPrice });
+                    // await createNewCartItem.update({ quantity: createNewCartItem.quantity + itemQuantity });
+
+
+                } else {
+                    console.log('\n\nUnexpected condition\n\n');
                 }
-            )
+
+
+
+
+                await t.commit();
+                return await this.Cart.findAll(
+                    {
+                        where: { userId: user.id },
+                        include: [
+                            {
+                                model: this.Item,
+                                attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
+                                include: [{
+                                    model: this.Category,
+                                    attributes: ['name']
+                                }
+                                ]
+                            }
+                        ]
+                    }
+                );
+            } catch (error) {
+                await t.rollback();
+                throw new Error(error);
+            }
         }
     }
+
+
+
 
 
 
@@ -336,7 +314,7 @@ class CatergotyServices {
         const user = await this.User.findByPk(jwt_user_id);
         // if user role is not admin
         if (userRole.id === jwt_user_role && userRole.name === 'Admin') {
-            throw new Error(`Admin cannot view registered user"s cart`);
+            throw new Error(`Use your personal acount`);
         }
 
         // guest
@@ -431,7 +409,7 @@ class CatergotyServices {
         const user = await this.User.findByPk(jwt_user_id);
         // if user role is not admin
         if (userRole.id === jwt_user_role && userRole.name === 'Admin') {
-            throw new Error(`Admin cannot view registered user"s cart`);
+            throw new Error(`Use your personal acount`);
         }
 
         // guest
@@ -476,10 +454,10 @@ class CatergotyServices {
             return cartItem;
         }
     }
-    
 
 
-    
+
+
 
 
     // delete-cart/:ItemId

@@ -1,6 +1,10 @@
 // Importing required modules
 const fs = require('fs');
 const path = require('path');
+const { uid } = require('uid')
+
+
+
 
 // Function to generate a random string using the crypto module
 function generateRandomString() {
@@ -20,7 +24,18 @@ const envVars = [
   'DIALECT=mysql',
   'PORT=3000',
   '\n\n',
-  'ACCESS_GUEST_ROLE=guest-user-68ea5cbf-60f0-4113-8d29-f',
+  '#DROP_ALL_DATA_OR_SYNCHRONISE=true will drop all the data from the database if it is true or just synchronise the database with the models if it is false',
+  'DROP_ALL_DATA_OR_SYNCHRONISE=true',
+  
+  '#guest id that will be added in database role id for guest user',
+  `ACCESS_GUEST_ROLE=guest-user-${uid(15)}`,
+  '\n\n',
+  '#Showing data for admin',
+  'ACCESS_Admin_TOKEN=Admin',
+  '#Showing data dor registered user',
+  'ACCESS_Register_TOKEN=Register',
+  '#Showing data for guest',
+  'ACCESS_Guest_TOKEN=Guest',
   '\n\n',
   `#THIS IS OUR SECRET GENERATED ACCESS TOKEN `,
   `ACCESS_TOKEN_SECRET=${generateRandomString()}`, // setting the access token secret as a randomly generated string
