@@ -49,4 +49,8 @@ run on Window
 ```bash
  SET DEBUG=Mwamuzi_Shadrick_EP_CA_AUG22FT:* & npm run dev
 ```
-##FIRST REQUEST
+
+run request to set up. this is the core of this app for initial data
+```bash
+ http://127.0.0.1:3000/setup
+```
