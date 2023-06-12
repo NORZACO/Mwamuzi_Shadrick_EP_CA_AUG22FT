@@ -15,14 +15,11 @@ require('dotenv').config();
 
 
 // createOrder
-router.get('/get_order', authenticateToken, jsonParser, async (req, res) => {
-    const UserId = req.user.userId;
-    
-    if (!UserId) {
-        return res.status(401).jsend.fail({ "result": "missing fields UserId" });
-    }
+router.get('/orders', authenticateToken, jsonParser, async (req, res) => {
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
     try {
-        const order = await orderService.getOrderByUser(UserId);
+        const order = await orderService.getOrderByUser(jwt_user_role, jwt_user_id);
         return res.status(200).jsend.success({ "result": order });
     } catch (error) {
         return res.status(500).jsend.fail({ "result": error.message });
@@ -34,14 +31,18 @@ router.get('/get_order', authenticateToken, jsonParser, async (req, res) => {
 
 
 
-router.post('/add-to-order', authenticateToken, jsonParser, async (req, res) => {
-    const UserId = req.user.userId;
-    const { ItemId, itemQuantity, itemSku } = req.body;
+router.post('/order/:id', authenticateToken, jsonParser, async (req, res) => {
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
+    const ItemId = req.params.id;
+
+
+    const { itemQuantity } = req.body;
     const missingFiels = [];
-    if (!UserId) missingFiels.push('UserId');
+    // if (!UserId) missingFiels.push('UserId');
     if (!ItemId) missingFiels.push('ItemId');
     if (!itemQuantity) missingFiels.push('itemQuantity');
-    if (!itemSku) missingFiels.push('itemSku');
+    // if (!itemSku) missingFiels.push('itemSku');
     if (missingFiels.length) {
         return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
     }
@@ -56,17 +57,13 @@ router.post('/add-to-order', authenticateToken, jsonParser, async (req, res) => 
     if (!regexItemId.test(ItemId)) {
         return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
     }
-    // UserId
-    const regexUserId = /^[0-9]*$/;
-    if (!regexUserId.test(UserId)) {
-        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
-    }
+
 
     try {
         // calculate the stock
         // const calculate_stock = itemreTurnStock - itemQuantity;
         // create cart  ItemId, itemQuantity, itemSku 
-        const NewOrder = await orderService.addOrderToOrderitems(UserId, ItemId, itemQuantity, itemSku);
+        const NewOrder = await orderService.addOrderToOrderitems(jwt_user_role, jwt_user_id, ItemId, itemQuantity);
 
         return res.status(200).jsend.success({ "result": NewOrder });
     } catch (error) {
@@ -80,38 +77,27 @@ router.post('/add-to-order', authenticateToken, jsonParser, async (req, res) => 
 
 
 // UPDATE update-order/:ItemId
-router.put('/update-order/:ItemId', authenticateToken, jsonParser, async (req, res) => {
-    const UserId = req.user.userId;
-    const ItemId = req.params.ItemId;
-    const { itemQuantity, itemSku } = req.body;
+router.put('/order/:id', authenticateToken, jsonParser, async (req, res) => {
+    const jwt_user_id = req.user.userId;
+    const jwt_user_role = req.user.role;
+    const OrderId = req.params.id;
+
+    const { status  } = req.body;
     const missingFiels = [];
-    if (!UserId) missingFiels.push('UserId');
-    if (!ItemId) missingFiels.push('ItemId');
-    if (!itemQuantity) missingFiels.push('itemQuantity');
-    if (!itemSku) missingFiels.push('itemSku');
+    if (!OrderId) missingFiels.push('OrderId');
+    if (!status) missingFiels.push('status');
     if (missingFiels.length) {
         return res.status(400).jsend.fail({ "result": `${missingFiels.join(', ')} is required` });
     }
     // itemid
     const regexItemId = /^[0-9]*$/;
-    if (!regexItemId.test(ItemId)) {
+    if (!regexItemId.test(OrderId)) {
         return res.status(400).jsend.fail({ "result": "ItemId must be a number" });
     }
-    // UserId
-    const regexUserId = /^[0-9]*$/;
-    if (!regexUserId.test(UserId)) {
-        return res.status(400).jsend.fail({ "result": "UserId must be a number" });
-    }
-    // rejex all, only number
-    const regexNumber = /^[0-9]*$/;
-    if (!regexNumber.test(itemQuantity)) {
-        return res.status(400).jsend.fail({ "result": "itemQuantity must be a number" });
-    }
+
+
     try {
-        // calculate the stock
-        // const calculate_stock = itemreTurnStock - itemQuantity;
-        // create cart  ItemId, itemQuantity, itemSku
-        const updateOrder = await orderService.updateOrderItem(UserId, ItemId, itemQuantity, itemSku);
+        const updateOrder = await orderService.updateOrderItem(jwt_user_role, jwt_user_id, OrderId, status);
         return res.status(200).jsend.success({ "result": updateOrder });
     } catch (error) {
         return res.status(500).jsend.fail({ "result": error.message });

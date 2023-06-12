@@ -1,7 +1,4 @@
 
-const { error } = require("jsend");
-const { Op, QueryTypes } = require("sequelize");
-
 
 class CatergotyServices {
     constructor(db) {
@@ -101,27 +98,6 @@ class CatergotyServices {
     }
 
 
-
-
-
-    /*
-        async getCartByUserId(jwt_user_role, jwt_user_id) {
-            return await this.Cart.findAll({
-                where: { userId: jwt_user_role },
-                include: [
-                    {
-                        model: this.Item,
-                        attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
-                        include: [{
-                            model: this.Category,
-                            attributes: ['name']
-                        }
-                        ]
-                    }
-                ]
-            });
-        }
-    */
 
 
 
@@ -449,51 +425,68 @@ class CatergotyServices {
                 { where: { id: cart.id } }
             );
             // delete cartItem
-            const delete_cartItem = await this.CartItem.destroy({ where: { CartId: cart.id, ItemId: item.id } });
+            await this.CartItem.destroy({ where: { CartId: cart.id, ItemId: item.id } });
             // return cartItem
-            return cartItem;
+            // deleted message
+            return `Item with id ${item_id} has been deleted from cart`;
+            // return cartItem;
         }
     }
-
-
 
 
 
 
     // delete-cart/:ItemId
     // DELETE /cart/:id This endpoint should be accessible when a Registered User has logged in. This endpoint should delete all items from the cart of the specific user. The cart id should be used.
-    async deleteMyCart(cart_id, jwt_user_id) {
+    async deleteMyCart(jwt_user_role, jwt_user_id, cart_id) {
         // start transaction t
         const t = await this.client.transaction();
+        // LOG
+        console.log(`jwt_user_role: ${jwt_user_role}`);
+        console.log(`jwt_user_id: ${jwt_user_id}`);
 
-        // search user by jwt_user_id and throw error if not found
-        const findLoginUser = await this.User.findOne({ where: { id: jwt_user_id } });
-        if (!findLoginUser) {
-            throw new Error(`User with id ${jwt_user_id} does not exist`);
+        // find user role by id
+        const userRole = await this.Role.findByPk(jwt_user_role);
+        // find user by id
+        const user = await this.User.findByPk(jwt_user_id);
+
+
+        // Guest user
+        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
+            throw new Error('http://127.0.0.1:3000/login');
         }
 
-        // search cart_id and throw error if not found
-        const findCart = await this.Cart.findOne({ where: { id: cart_id } });
-        if (!findCart) {
-            throw new Error(`Cart with id ${cart_id} does not exist`);
+
+        // Admin
+        if (userRole.id === user.roleId && userRole.name === 'Admin') {
+            throw new Error(`Use your personal acount`);
         }
 
-        try {
-            // delete All cartItem where CartId
-            await this.CartItem.destroy({ where: { CartId: cart_id } });
-            // delete cart where id
-            await this.Cart.destroy({ where: { id: cart_id, userId: jwt_user_id } });
+        // Registered
+        if (userRole.id === user.roleId && userRole.name === 'Registered') {
+            // check item
+            // search cart_id and throw error if not found
+            const findCart = await this.Cart.findOne({ where: { id: cart_id } });
+            if (!findCart) {
+                throw new Error(`Cart with id ${cart_id} does not exist`);
+            }
+
+            await this.Cart.destroy({ where: { id: cart_id } });
             // saved
             await t.commit();
-            // return message
-            return { message: `All Items for the user ${findLoginUser.firstName}  ${findLoginUser.lastName} has been successfully deleted` };
-
-        }
-        catch (err) {
-            await t.rollback();
-            throw err;
+            // return deleted message
+            return `Cart with id ${cart_id} has been deleted`;
         }
     }
+
+
+
+
+
+
+
+
+
 
 
     // DELETE all items in the cart

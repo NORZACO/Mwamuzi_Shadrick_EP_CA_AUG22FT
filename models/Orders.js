@@ -1,9 +1,10 @@
 module.exports = (sequelize, Sequelize) => {
     const Order = sequelize.define('Order', {
         // status
+        // https://sebhastian.com/sequelize-enum/#:~:text=Sequelize%20provides%20the%20ENUM%20data%20type%20that%20you,has%20the%20status%20attribute%20that%E2%80%99s%20an%20ENUM%20type%3A
         orderStatus: {
             type: Sequelize.ENUM,
-            values: ['pending', 'completed', 'cancelled'],
+            values: ['pending', 'completed', 'cancelled'], //  "Process" // Process, Complete, Cancelled
             defaultValue: 'pending'
         },
 

@@ -27,6 +27,8 @@ const cartsRouter = require('./routes/carts');
 const orderRouter = require('./routes/order');
 // setupRouter
 const setupRouter = require('./routes/utility');
+// search
+const searchRouter = require('./routes/saerch');
 
 
 
@@ -80,6 +82,7 @@ app.use('/', itemsRouter);
 app.use('/', cartsRouter);
 app.use('/', orderRouter);
 app.use('/', setupRouter);
+app.use('/', searchRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

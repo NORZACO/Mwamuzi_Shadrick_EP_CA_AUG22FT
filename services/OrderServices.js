@@ -15,235 +15,262 @@ class OrderService {
     }
 
 
-    // id, createdAt, updatedAt, UserId
-    // all order
-    async getOrderByUser(UserId) {
-        const order = await this.Order.findOne({
-            where: {
-                UserId
-            },
-            include: {
-                model: this.Item,
-                // as: 'items',
-                through: {
-                    attributes: ['quantity', 'price', 'itemId', 'OrderId']
-                }
-            }
-        })
-        // check the order
-        if (!order) {
-            throw new Error(`Order with UserId ${UserId} does not exist`);
+
+
+    //  getAllCategories
+    async getOrderByUser(jwt_user_role, jwt_user_id) {
+        // LOG
+        console.log(`jwt_user_role: ${jwt_user_role}`);
+        console.log(`jwt_user_id: ${jwt_user_id}`);
+
+        // find user role by id
+        const userRole = await this.Role.findByPk(jwt_user_role);
+        // find user by id
+        const user = await this.User.findByPk(jwt_user_id);
+
+        // Guest user
+        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
+            // throrw error
+            throw new Error(`No Guest Access `);
         }
 
-        return order;
+        // Registered
+        if (userRole.id === user.roleId && userRole.name === 'Registered') {
+            const order = await this.Order.findOne({
+                where: {
+                    UserId: jwt_user_id
+                },
+                include: {
+                    model: this.Item,
+                    // as: 'items',
+                    through: {
+                        attributes: ['quantity', 'price', 'itemId', 'OrderId']
+                    }
+                }
+            })
+            // check the order
+            if (!order) {
+                throw new Error(`Order with UserId ${user.firstName} does not exist`);
+            }
+
+            return order;
+        }
+
+
+        // Admin
+        if (userRole.id === user.roleId && userRole.name === 'Admin') {
+            const order = await this.Order.findAll({
+                // where: {
+                //     UserId: jwt_user_id
+                // },
+                include: {
+                    model: this.Item,
+                    // as: 'items',
+                    through: {
+                        attributes: ['quantity', 'price', 'itemId', 'OrderId']
+                    }
+                }
+            })
+            // check the order
+            if (!order) {
+                throw new Error(`Order with UserId ${user.firstName} does not exist`);
+            }
+
+            return order;
+        }
+
     }
-
-
-
 
 
     // create order
-    async addOrderToOrderitems(jwt_user_id, item_id, quantity, items_sku) {
-        // start transaction t
-        const t = await this.client.transaction();
-
-        // search user by jwt_user_id and throw error if not found
-        const find_login_user = await this.User.findOne({ where: { id: jwt_user_id } });
-        if (!find_login_user) {
-            throw new Error(`User with id ${jwt_user_id} does not exist`);
-        }
-
-        // search item_id and throw error if not found
-        const find_Item = await this.Item.findOne({ where: { id: item_id } });
-        if (!find_Item) {
-            throw new Error(`Item with id ${item_id} does not exist`);
-        }
-
-        // search items_sku and throw error if not found
-        const find_sku = await this.Item.findOne({ where: { sku: items_sku } });
-        if (!find_sku) {
-            throw new Error(`Item with sku ${items_sku} does not exist`);
-        }
-
-
-        try {
-            // find order where UserId : jwt_user_id
-            const findOrder = await this.Order.findOne({ where: { UserId: jwt_user_id } });
-            // if order found
-            if (findOrder) {
-                // add item_id to orderitems
-                const findOrderItem = await this.OrderItem.findOne({ where: { OrderId: findOrder.id, ItemId: item_id } });
-                // if item_id found
-                if (findOrderItem) {
-                    // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
-                    if (find_Item.stock_quantity < 0)/*< findOrderItem.quantity + quantity)*/ {
-                        throw new Error(`There is not enough stock_quantity for item with id ${item_id}, stock_quantity: ${find_Item.stock_quantity}, your order : ${findOrderItem.quantity} ,want to add: ${quantity}`);
-                    }
-
-
-                    /*ADD AND UPDATE THE TOTAL PRICE AND QUANTITY */
-                    // update OrderItem { quantity, price, ItemId, OrderId }
-                    await this.OrderItem.update({ quantity: findOrderItem.quantity + quantity }, { where: { OrderId: findOrder.id, ItemId: item_id } });
-                    // update cart totalPrice
-                    await this.Order.update({ totalPrice: findOrder.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
-
-                    // substract stock_quantity
-                    await this.Item.update({ stock_quantity: find_Item.stock_quantity - quantity }, { where: { id: item_id } });
-                    await t.commit();
-                    // return 'Thanks 1'
-                    return await this.Order.findOne({ where: { UserId: jwt_user_id } });
-                }
-
-                // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
-                // if (find_Item.stock_quantity < quantity) {
-                //     throw new Error(`2 There is not enough stock_quantity for item with id ${item_id}`);
-                // }
-
-                if (find_Item.stock_quantity < findOrderItem.quantity + quantity) {
-                    throw new Error(`There is not enough stock_quantity for item with id ${item_id}, stock_quantity: ${find_Item.stock_quantity}, your order : ${findOrderItem.quantity} ,want to add: ${quantity}`);
-                }
-
-                /*ADD A DIFERREMT ITEM AND ORDER */
-                // create OrderItem { quantity, price, ItemId, OrderId }
-                await this.OrderItem.create({ quantity, price: 1914, ItemId: item_id, OrderId: findOrder.id });
-                // update cart totalPrice  Order  { id, orderStatus, totalPrice, discountPercentage, Ordered_at, UserId }
-                await this.Order.update({ orderStatus: "pending", totalPrice: findOrder.totalPrice + (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity }, { where: { UserId: jwt_user_id } });
-
-                // substract stock_quantity
-                await this.Item.update({ stock_quantity: find_Item.stock_quantity - quantity }, { where: { id: item_id } });
-
-                await t.commit();
-                // return 'Thanks 2'
-                return await this.Order.findOne({ where: { UserId: jwt_user_id } });
-            }
-
-            // CHECK IF THERE IS ENOUGH STOCK_QUANTITY
-            // if (find_Item.stock_quantity < quantity) {
-            //     throw new Error(`3 There is not enough stock_quantity for item with id ${item_id}`);
-            // }
-            if (find_Item.stock_quantity < 0)/*< findOrderItem.quantity + quantity)*/ {
-                throw new Error(`There is not enough stock_quantity for item with id ${item_id}, stock_quantity: ${find_Item.stock_quantity}, your order : ${findOrderItem.quantity} ,want to add: ${quantity}`);
-            }
-
-            /* CREATE A NEW ORDER AND CARTORDER */
-            // create Order { id, orderStatus, totalPrice, discountPercentage, Ordered_at, UserId }
-            const createOrder = await this.Order.create({ orderStatus: 'pending', totalPrice: (await this.Item.findOne({ where: { sku: items_sku } })).price * quantity, discountPercentage: 0.25, Ordered_at: new Date(), UserId: jwt_user_id });
-            // create orderitem { quantity, price, ItemId, OrderId }
-            await this.OrderItem.create({ quantity, price: 0, ItemId: item_id, OrderId: createOrder.id });
-
-            // substract stock_quantity
-            await this.Item.update({ stock_quantity: find_Item.stock_quantity - quantity }, { where: { id: item_id } });
-            // commit transaction
-            await t.commit();
-            // return `Thanks 3`
-            return await this.Order.findOne({ where: { UserId: jwt_user_id } });
-        }
-        catch (err) {
-            await t.rollback();
-            throw err;
-        }
-    }
-
-
-
-    // update
-    async updateOrderItem(jwt_user_id, item_id, item_quantity, items_sku) {
+    async addOrderToOrderitems(jwt_user_role, jwt_user_id, item_id, itemQuantity) {
         // start transaction
-        const t = await this.client.transaction();
-        try {
-            // search user by jwt_user_id and throw error if not found
-            const find_login_user = await this.User.findOne({ where: { id: jwt_user_id } });
-            if (!find_login_user) {
-                throw new Error(`User with id ${jwt_user_id} does not exist`);
-            }
+        // LOG
+        console.log(`jwt_user_role: ${jwt_user_role}`);
+        console.log(`jwt_user_id: ${jwt_user_id}`);
 
-            // search item_id and throw error if not found
-            const find_Item = await this.Item.findOne({ where: { id: item_id } });
-            if (!find_Item) {
+        // find user role by id
+        const userRole = await this.Role.findByPk(jwt_user_role);
+        // find user by id
+        const user = await this.User.findByPk(jwt_user_id);
+
+
+        // Guest user
+        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
+            throw new Error('http://127.0.0.1:3000/login');
+        }
+
+
+        // Admin
+        if (userRole.id === user.roleId && userRole.name === 'Admin') {
+            throw new Error(`Use your personal acount`);
+        }
+
+        // Registered
+        if (userRole.id === user.roleId && userRole.name === 'Registered') {
+            // check item
+            const item = await this.Item.findByPk(item_id);
+            if (!item) {
                 throw new Error(`Item with id ${item_id} does not exist`);
             }
 
-            // search items_sku and throw error if not found
-            const find_sku = await this.Item.findOne({ where: { sku: items_sku } });
-            if (!find_sku) {
-                throw new Error(`Item with sku ${items_sku} does not exist`);
+
+
+            //  quantity in cartItem
+            const orderItem = await this.OrderItem.findOne({ where: { ItemId: item.id } });
+
+            //   // check
+            if (orderItem) {
+                // check if the item is in stock
+                if (item.stock_quantity < itemQuantity || item.stock_quantity === 0) {
+                    throw new Error(`Out-of-stock`)
+                }
             }
 
-            // find order where UserId : jwt_user_id
-            const findOrder = await this.Order.findOne({ where: { UserId: jwt_user_id } });
-            if (!findOrder) {
-                throw new Error(`Order with UserId ${jwt_user_id} does not exist`);
+            const t = await this.client.transaction();
+            // https://sequelize.org/docs/v6/core-concepts/model-querying-finders/#findorcreate
+            try {
+                // colums : id, orderStatus, totalPrice, discountPercentage, Ordered_at, UserId
+                const [createNewOrder, created] = await this.Order.findOrCreate({
+                    where: { userId: user.id },
+                    defaults: {
+                        orderStatus: 'pending',
+                        totalPrice: itemQuantity * item.price,
+                        discountPercentage: 0.25,
+                        Ordered_at: new Date(),
+                        UserId: user.id
+                    }
+                });
+
+
+                // COLUMS :  quantity, price, ItemId, OrderId
+                const [createNewOrderItem, createdOrderItem] = await this.OrderItem.findOrCreate({
+                    where: { OrderId: createNewOrder.id, ItemId: item.id },
+                    defaults: {
+                        quantity: itemQuantity,
+                        price: /*item.price*/ 10,
+                        ItemId: item.id,
+                        OrderId: createNewOrder.id
+                    }
+                });
+
+                // Check if the cart is created or found
+                if (created && createdOrderItem) {
+                    console.log('\n\nNew order created and new order item created\n\n');
+                    // update Item stock
+                    await this.Item.update({ stock_quantity: item.stock_quantity - itemQuantity }, { where: { id: item.id } });
+
+
+                } else if (!created && !createdOrderItem) {
+                    console.log('\n\nExisting cart found and existing cart item found\n\n');
+                    // Calculate the updated total price
+                    const totalPrice = createNewOrder.totalPrice + itemQuantity * item.price;
+                    // Update the total price and cart item quantity
+                    await createNewOrder.update({ totalPrice });
+                    await createNewOrderItem.update({ quantity: createNewOrderItem.quantity + itemQuantity });
+
+                    // // update Item stock
+                    await this.Item.update({ stock_quantity: item.stock_quantity - itemQuantity }, { where: { id: item.id } });
+
+
+                } else if (!created && createdOrderItem) {
+                    console.log('\n\nExisting cart found and new cart item created\n\n');
+                    // Calculate the updated total price
+                    const totalPrice = createNewOrder.totalPrice + itemQuantity * item.price;
+                    // Update the total price and cart item quantity
+                    await createNewOrder.update({ totalPrice });
+                    // await createNewCartItem.update({ quantity: createNewCartItem.quantity + itemQuantity });
+
+                    // // update Item stock
+                    await this.Item.update({ stock_quantity: item.stock_quantity - itemQuantity }, { where: { id: item.id } });
+
+
+                } else {
+                    console.log('\n\nUnexpected condition\n\n');
+                }
+
+
+
+                await t.commit();
+                return await this.Order.findAll(
+                    {
+                        where: { userId: user.id },
+                        include: [
+                            {
+                                model: this.Item,
+                                attributes: ['item_name', 'price', 'stock_quantity', 'sku', 'img_url'],
+                                include: [{
+                                    model: this.Category,
+                                    attributes: ['name']
+                                }
+                                ]
+                            }
+                        ]
+                    }
+                );
+            } catch (error) {
+                await t.rollback();
+                throw new Error(error);
             }
-
-            // add item_id to orderitems
-            let findOrderItem = await this.OrderItem.findOne({ where: { OrderId: findOrder.id, ItemId: item_id } });
-            if (!findOrderItem) {
-                throw new Error(`OrderItem with OrderId ${findOrder.id} and ItemId ${item_id} does not exist`);
-            }
-
-            if (find_Item.stock_quantity <= 0 || find_Item.stock_quantity < findOrderItem.quantity + item_quantity) {
-                throw new Error(`There is not enough ${find_Item.item_name}, stock_quantity: ${find_Item.stock_quantity}, your order : ${findOrderItem.quantity} ,but want to add: ${item_quantity}`);
-            }
-
-            // update orderitem
-            await findOrderItem.update({ quantity: item_quantity });
-
-            // update cart totalPrice  Order  { id, orderStatus, totalPrice, discountPercentage, Ordered_at, UserId }
-            await findOrder.update({ totalPrice: find_Item.price * findOrderItem.quantity - (findOrderItem.quantity - item_quantity) });
-
-            // PUT /cart_item/:id This endpoint should be accessible when a Registered User has logged in. This endpoint changes the desired quantity of a specific item in for the logged in user’s cart. The item's id should be provided with a new desired purchase quantity. When a cart item's desired purchase quantity is increased, the back-end must ensure enough stock of the item in the items table. The item’s stock quantity should only be updated once the order has been placed.
-            if (find_Item.stock_quantity < findOrderItem.quantity + item_quantity) {
-                throw new Error(`There is not enough stock_quantity for item with id ${item_id}, stock_quantity: ${find_Item.stock_quantity}, your order : ${findOrderItem.quantity} ,want to add: ${item_quantity}`);
-            }
-
-            // update stock_quantity if item_quantity is plus or minus
-            // await find_Item.update({ stock_quantity: find_Item.stock_quantity - (findOrderItem.quantity - item_quantity) });
-            
-
-
-
-
-
-
-
-
-            // substract stock_quantity if user update is minus and  substract stock_quantity if user update is minus
-            await find_Item.update({ stock_quantity: find_Item.stock_quantity + (findOrderItem.quantity - item_quantity),
-                // update cart totalPrice  Order  { id, orderStatus, totalPrice, discountPercentage, Ordered_at, UserId };
-                totalPrice: find_Item.price * findOrderItem.quantity - (findOrderItem.quantity - item_quantity) }, { where: { id: item_id } });
-
-
-
-
-            await t.commit();
-            return {
-                price: find_Item.price,
-                totalPrice: findOrder.totalPrice,
-                quantity: findOrderItem.quantity,
-                stock_quantity: find_Item.stock_quantity,
-                // // totalprice times 40%
-                // coupon : findOrder.totalPrice * 0.4,
-                // // totalprice minus 40%
-                // totalprice_minus_coupon : findOrder.totalPrice - (findOrder.totalPrice * 0.4)
-            }
-            // return await this.Order.findOne({ where: { UserId: jwt_user_id } });
-        }
-        catch (err) {
-            await t.rollback();
-            throw err;
         }
     }
 
 
+    async updateOrderItem(jwt_user_role, jwt_user_id, order_id, status) {
+        // LOG
+        console.log(`jwt_user_role: ${jwt_user_role}`);
+        console.log(`jwt_user_id: ${jwt_user_id}`);
 
-    // Add coupon for user with same email
+        // find user role by id
+        const userRole = await this.Role.findByPk(jwt_user_role);
+        // find user by id
+        const user = await this.User.findByPk(jwt_user_id);
+
+        // guest
+        if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
+            throw new Error(`No guest allowed`)
+        }
+
+        // Register
+        if (userRole.id === jwt_user_role && userRole.name === 'Registered') {
+            throw new Error(`No Registered allowed`)
+        }
 
 
+        // if user role is not admin
+        const t = await this.client.transaction();
+
+        if (userRole.id === jwt_user_role && userRole.name === 'Admin') {
+            const t = await this.client.transaction();
+
+            try {
+                // find the order
+                const order = await this.Order.findByPk(order_id);
+                // if order is not found
+                if (!order) {
+                    throw new Error(`Order with id ${order_id} does not exist`);
+                }
+
+                // https://sebhastian.com/sequelize-enum/#:~:text=Sequelize%20provides%20the%20ENUM%20data%20type%20that%20you,has%20the%20status%20attribute%20that%E2%80%99s%20an%20ENUM%20type%3A
+                const getAttr = this.Order.getAttributes().orderStatus.values;
+                // check if the status is valid
+                
+                // update OrderStatus
+                await order.update({ orderStatus: status });
+             
 
 
+                await t.commit();
+                // return message
+                return order
+                
+            } catch (error) {
+                await t.rollback();
+                throw new Error(error);
+            }
 
-
-
+        }
+    }
 
 
 }
