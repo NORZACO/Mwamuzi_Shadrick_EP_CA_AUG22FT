@@ -32,6 +32,13 @@ install packages
 ```bash
 npm install
 ```
+
+
+Generate the .env variables 
+
+```bash
+node generate_random_string.js
+```
 run on mac. you need to have nodemon install on your machine to use npm run dev (easy for debugging).
 if you dont want to use nodemon replace "npm run dev" to "npm start"
 
