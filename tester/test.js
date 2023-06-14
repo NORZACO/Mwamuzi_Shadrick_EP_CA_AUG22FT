@@ -31,41 +31,11 @@
 
 
 
-// const crypto = require('node:crypto');
+const crypto = require('node:crypto');
 
-// function hashPassword(password) {
-//   return crypto.createHash('sha256').update(password).digest('hex');
-// }
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
 
-// const hashedPassword = hashPassword('myPlaintextPassword');
-// console.log(hashedPassword);
-
-
-
-// const db = require('../models');
-
-// (async () => {
-//   try {
-//     const cart = await db.Cart.create({
-//       created_at: new Date(),
-//       updated_at: new Date(),
-//       user_id: 1   // Replace with the user ID if applicable
-//     });
-
-//     console.log('Cart created:', cart);
-//   } catch (error) {
-//     console.error('Error creating cart:', error);
-//   } finally {
-//     db.sequelize.close();
-//   }
-// })();
-
-
-
-
-
-console.log(
-
-    (800 * 4) + (120 * 2) + (1000 * 3)
-
-);
+const hashedPassword = hashPassword('Mwamuzi_Shadrick_EP_CA_AUG22FT_API');
+console.log(hashedPassword);
