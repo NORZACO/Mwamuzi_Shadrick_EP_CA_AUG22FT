@@ -14,6 +14,15 @@ function generateRandomString() {
 // Getting the path to the .env file
 const envPath = path.resolve(__dirname, '.env');
 
+// Checking if the .env file exists
+if (fs.existsSync(envPath)) {
+  // If the .env file exists, then we append the environment variables to the file
+  console.log('.env file already exists');
+  return;
+}
+var sever_port = '3000'
+const DOMAIN = `159.223.161.123`;
+const FULL_URL =  `http://${DOMAIN}:${sever_port}`;
 // Array of environment variables to set
 const envVars = [
   '#DATABASE CONNECTION VARIABLES',
@@ -23,6 +32,7 @@ const envVars = [
   'DATABASE_NAME=StockSalesDB',
   'DIALECT=mysql',
   'PORT=3000',
+  `DOMAIN_SERVER=${FULL_URL}`,
   '\n\n',
   '#DROP_ALL_DATA_OR_SYNCHRONISE=true will drop all the data from the database if it is true or just synchronise the database with the models if it is false',
   'DROP_ALL_DATA_OR_SYNCHRONISE=true',
