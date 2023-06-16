@@ -39,18 +39,8 @@ const searchRouter = require('./routes/saerch');
 
 
 
-db.sequelize.sync({ force: true }).then(() => {
-  //logo
-  console.log(`
-  ------------------------------------------------------------------
-  |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
-  ------------------------------------------------------------------
-  `)
-})
-
-// db.sequelize.sync({ force: false }).then(() => {
-// }).then(() => {
-//   // logo
+// db.sequelize.sync({ force: true }).then(() => {
+//   //logo
 //   console.log(`
 //   ------------------------------------------------------------------
 //   |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
@@ -58,6 +48,15 @@ db.sequelize.sync({ force: true }).then(() => {
 //   `)
 // })
 
+db.sequelize.sync({ force: false }).then(() => {
+}).then(() => {
+  // logo
+  console.log(`
+  ------------------------------------------------------------------
+  |     ALL DATABASE TABLES HAVE BEEN SUCCESSFULLY SYNCRONISE       |
+  ------------------------------------------------------------------
+  `)
+})
 
 
 

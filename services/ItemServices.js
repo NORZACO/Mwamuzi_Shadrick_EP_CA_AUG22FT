@@ -56,10 +56,10 @@ class ItemServices {
                         [Op.gt]: 0
                     }
                 },
-                attributes: [['item_name', `${guestView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', ['img_url', 'image']],
+                attributes: ['id',['item_name', `${guestView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', ['img_url', 'image']],
                 include: {
                     model: this.Category,
-                    attributes: ['name']
+                    attributes: ['name', 'id']
                 }
             });
         }
@@ -70,7 +70,7 @@ class ItemServices {
         // Registered
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
             return this.Item.findAll({
-                attributes: [['item_name', `${registerView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', 'img_url'],
+                attributes: ['id',['item_name', `${registerView}`], 'price', ['stock_quantity', 'In-stock'], 'sku', 'img_url'],
                 include: {
                     model: this.Category,
                     attributes: ['name']
@@ -172,10 +172,10 @@ class ItemServices {
         if (userRole.id === jwt_user_role && userRole.name === 'Guest') {
             // show name and price and picture
             return this.Item.findByPk(itemPK, {
-                attributes: [['item_name', `${guestView}`], 'price', 'img_url'],
+                attributes: ['id',['item_name', `${guestView}`], 'price', 'img_url'],
                 include: {
                     model: this.Category,
-                    attributes: ['name']
+                    attributes: ['name', 'id']
                 }
             })
         }
@@ -184,7 +184,7 @@ class ItemServices {
         if (userRole.id === user.roleId && userRole.name === 'Registered') {
             // show name and price and picture
             return this.Item.findByPk(itemPK, {
-                attributes: [['item_name', `${registerView}`], 'price', 'img_url'],
+                attributes: ['id',['item_name', `${registerView}`], 'price', 'img_url'],
                 include: {
                     model: this.Category,
                     attributes: ['name']
@@ -195,7 +195,7 @@ class ItemServices {
         if (userRole.id === user.roleId && userRole.name === 'Admin') {
             // show name and price and picture
             return this.Item.findByPk(itemPK, {
-                attributes: [['item_name', `${adminView}`], 'price', 'img_url'],
+                attributes: ['id',['item_name', `${adminView}`], 'price', 'img_url'],
                 include: {
                     model: this.Category,
                     attributes: ['name']
