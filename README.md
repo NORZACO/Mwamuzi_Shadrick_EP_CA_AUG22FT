@@ -43,7 +43,7 @@ run on mac. you need to have nodemon install on your machine to use npm run dev 
 if you dont want to use nodemon replace "npm run dev" to "npm start"
 
 ```bash
-  DEBUG=Mwamuzi_Shadrick_EP_CA_AUG22FT:* npm run dev
+  DEBUG=Mwamuzi_Shadrick_EP_CA_AUG22FT:* & npm run dev
 ```
 run on Window
 ```bash
