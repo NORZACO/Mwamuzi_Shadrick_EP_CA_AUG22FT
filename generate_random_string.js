@@ -23,6 +23,7 @@ const envVars = [
   'DATABASE_NAME=StockSalesDB',
   'DIALECT=mysql',
   'PORT=3000',
+  'PORT=3000',
   '\n\n',
   '#DROP_ALL_DATA_OR_SYNCHRONISE=true will drop all the data from the database if it is true or just synchronise the database with the models if it is false',
   'DROP_ALL_DATA_OR_SYNCHRONISE=true',

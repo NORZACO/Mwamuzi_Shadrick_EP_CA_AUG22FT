@@ -25,7 +25,7 @@ var server = http.createServer(app);
  * Listen on provided port, on all network interfaces.
  */
 
-const ip = process.env.IP_ADDRESS; // Replace with your desired IP address
+const ip = process.env.IP_ADDRESS || '127.0.0.1'; // Replace with your desired IP address
 
 
 server.listen(port, ip, () => console.log(`Server running on port http://${ip}:${port}`))
