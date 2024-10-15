@@ -1,22 +1,37 @@
 // models/index.js
-const Sequelize = require('sequelize')
+const { Sequelize } = require('sequelize');
 const fs = require("fs")
 const path = require("path");
 const basename = path.basename(__filename);
 require('dotenv').config()
 
 
+let sequelize;
 
 
-const sequelize = new Sequelize(
-    process.env.DATABASE_NAME,
-    process.env.ADMIN_USERNAME,
-    process.env.ADMIN_PASSWORD, {
+    const host = process.env.HOST;
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
+    const dbName = process.env.DATABASE_NAME;
+    const port = process.env.PORT || 5432;  // Default PostgreSQL port is 5432 if not provided
+    const primaryDialect = process.env.DIALECT || 'postgres';  // Default to PostgreSQL, but could be 'mysql'
+        // Try to connect to the database using the specified DIALECT
 
-    host: process.env.HOST,
-    dialect: process.env.DIALECT
-}
-);
+
+
+
+console.log(`Trying to connect to ${primaryDialect.toUpperCase()}...`);
+
+sequelize = new Sequelize( 
+    dbName, 
+    username, 
+    password, 
+    {
+    host,
+    port,
+    dialect: primaryDialect,  // Could be 'postgres' or 'mysql'
+    logging: false  // Disable logging for simplicity
+    });
 
 
 sequelize
